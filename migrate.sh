@@ -78,7 +78,7 @@ case "$1" in
             exit 1
         fi
         echo -e "${GREEN}Creating migration: $2${NC}"
-        if docker exec -it mmgc-webapp dotnet ef migrations add "$2" --project MMGC.csproj; then
+        if docker exec mmgc-webapp dotnet ef migrations add "$2" --project MMGC.csproj; then
             echo -e "${GREEN}Migration '$2' created successfully!${NC}"
             echo -e "${YELLOW}Don't forget to apply it: ./migrate.sh update${NC}"
         else
@@ -91,7 +91,7 @@ case "$1" in
         # Check if Migrations folder exists
         if ! docker exec mmgc-webapp test -d Migrations 2>/dev/null; then
             echo -e "${YELLOW}No migrations found. Creating initial migration...${NC}"
-            if docker exec -it mmgc-webapp dotnet ef migrations add InitialCreate --project MMGC.csproj; then
+            if docker exec mmgc-webapp dotnet ef migrations add InitialCreate --project MMGC.csproj; then
                 echo -e "${GREEN}Initial migration created${NC}"
             else
                 echo -e "${RED}Failed to create initial migration${NC}"
@@ -99,7 +99,7 @@ case "$1" in
             fi
         fi
         
-        if docker exec -it mmgc-webapp dotnet ef database update --project MMGC.csproj; then
+        if docker exec mmgc-webapp dotnet ef database update --project MMGC.csproj; then
             echo -e "${GREEN}Migrations applied successfully!${NC}"
         else
             echo -e "${RED}Failed to apply migrations${NC}"

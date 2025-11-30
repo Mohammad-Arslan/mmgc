@@ -1,0 +1,176 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var monthlyRevenue = ViewBag.MonthlyRevenue as Dictionary<string, decimal>;
+    var todayAppointments = ViewBag.TodayAppointments as IEnumerable<dynamic>;
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+        <p class="text-muted">Hospital Management Overview</p>
+    </div>
+</div>
+
+<!-- Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card border-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Total Appointments</h6>
+                        <h2 class="mb-0 text-primary">@ViewBag.TotalAppointments</h2>
+                    </div>
+                    <div class="text-primary" style="font-size: 2.5rem;">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Total Patients</h6>
+                        <h2 class="mb-0 text-success">@ViewBag.TotalPatients</h2>
+                    </div>
+                    <div class="text-success" style="font-size: 2.5rem;">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Total Procedures</h6>
+                        <h2 class="mb-0 text-info">@ViewBag.TotalProcedures</h2>
+                    </div>
+                    <div class="text-info" style="font-size: 2.5rem;">
+                        <i class="bi bi-clipboard-pulse"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Lab Reports</h6>
+                        <h2 class="mb-0 text-warning">@ViewBag.TotalLabReports</h2>
+                    </div>
+                    <div class="text-warning" style="font-size: 2.5rem;">
+                        <i class="bi bi-flask"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Card -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-cash-coin"></i> Total Revenue</h5>
+            </div>
+            <div class="card-body">
+                <h2 class="text-success mb-4">₹@ViewBag.TotalRevenue.ToString("N2")</h2>
+                <h6 class="text-muted mb-3">Monthly Revenue Statistics (@DateTime.Now.Year)</h6>
+                <div class="row">
+                    @if (monthlyRevenue != null)
+                    {
+                        @foreach (var month in monthlyRevenue)
+                        {
+                            <div class="col-md-2 mb-3">
+                                <div class="text-center">
+                                    <div class="mb-2">
+                                        <div class="progress" style="height: 100px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: 100%; height: @(month.Value > 0 ? Math.Max(10, (month.Value / monthlyRevenue.Values.Max()) * 100) : 0)%" 
+                                                 aria-valuenow="@month.Value" aria-valuemin="0" aria-valuemax="@monthlyRevenue.Values.Max()">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block">@month.Key</small>
+                                    <strong>₹@month.Value.ToString("N0")</strong>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Appointments -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Today's Appointments</h5>
+            </div>
+            <div class="card-body">
+                @if (todayAppointments != null && todayAppointments.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Doctor</th>
+                                    <th>Time</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var appointment in todayAppointments)
+                                {
+                                    <tr>
+                                        <td>@appointment.PatientName</td>
+                                        <td>@appointment.DoctorName</td>
+                                        <td>@appointment.AppointmentDate.ToString("hh:mm tt")</td>
+                                        <td><span class="badge bg-secondary">@appointment.AppointmentType</span></td>
+                                        <td>
+                                            @{
+                                                var statusClass = appointment.Status switch
+                                                {
+                                                    "Scheduled" => "bg-primary",
+                                                    "Confirmed" => "bg-success",
+                                                    "Completed" => "bg-info",
+                                                    "Cancelled" => "bg-danger",
+                                                    _ => "bg-secondary"
+                                                };
+                                            }
+                                            <span class="badge @statusClass">@appointment.Status</span>
+                                        </td>
+                                        <td>
+                                            <a asp-controller="Appointments" asp-action="Details" asp-route-id="@appointment.Id" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4">No appointments scheduled for today.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

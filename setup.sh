@@ -205,6 +205,14 @@ else
     fi
 fi
 
+# Wait a moment for seeding to complete
+echo -e "${YELLOW}Waiting for database seeding to complete...${NC}"
+sleep 5
+
+# Restart webapp container to ensure seeding runs
+echo -e "${GREEN}Restarting webapp container to apply seeding...${NC}"
+$DOCKER_COMPOSE_CMD restart webapp
+
 echo ""
 echo -e "${GREEN}================================${NC}"
 echo -e "${GREEN}Setup completed successfully!${NC}"
@@ -214,6 +222,17 @@ echo -e "Services are running:"
 echo -e "  - Web App:     http://localhost:${WEBAPP_PORT}"
 echo -e "  - SQLPad:      http://localhost:${SQLPAD_PORT}"
 echo -e "  - MSSQL:       localhost:${MSSQL_PORT}"
+echo ""
+echo -e "${BLUE}Default Admin Credentials:${NC}"
+echo -e "  - Email:    admin@mmgc.com"
+echo -e "  - Password: Admin@123"
+echo ""
+echo -e "${BLUE}Created Roles:${NC}"
+echo -e "  - Admin (Full system access)"
+echo -e "  - Doctor (Doctor management)"
+echo -e "  - Nurse (Nurse management)"
+echo -e "  - LabStaff (Laboratory management)"
+echo -e "  - Patient (Patient access)"
 echo ""
 echo -e "Useful commands:"
 echo -e "  - View logs:   $DOCKER_COMPOSE_CMD logs -f"

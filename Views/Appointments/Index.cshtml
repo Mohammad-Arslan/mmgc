@@ -1,0 +1,96 @@
+@model IEnumerable<MMGC.Models.Appointment>
+@{
+    ViewData["Title"] = "Appointments";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-calendar-check"></i> Appointments</h2>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> New Appointment
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Date & Time</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Patient?.FullName</td>
+                            <td>@(item.Doctor?.FullName ?? "Not Assigned")</td>
+                            <td>@item.AppointmentDate.ToString("dd MMM yyyy hh:mm tt")</td>
+                            <td>@item.AppointmentType</td>
+                            <td>
+                                @{
+                                    var statusClass = item.Status switch
+                                    {
+                                        "Scheduled" => "bg-primary",
+                                        "Confirmed" => "bg-success",
+                                        "Completed" => "bg-info",
+                                        "Cancelled" => "bg-danger",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @statusClass">@item.Status</span>
+                            </td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button onclick="sendSMS(@item.Id)" class="btn btn-sm btn-success" title="Send SMS">
+                                    <i class="bi bi-chat-text"></i>
+                                </button>
+                                <button onclick="sendWhatsApp(@item.Id)" class="btn btn-sm btn-success" title="Send WhatsApp">
+                                    <i class="bi bi-whatsapp"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function sendSMS(id) {
+            fetch(`/Appointments/SendSMS/${id}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('SMS sent successfully!');
+                    } else {
+                        alert('Failed to send SMS');
+                    }
+                });
+        }
+
+        function sendWhatsApp(id) {
+            fetch(`/Appointments/SendWhatsApp/${id}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('WhatsApp message sent successfully!');
+                    } else {
+                        alert('Failed to send WhatsApp message');
+                    }
+                });
+        }
+    </script>
+}
