@@ -50,11 +50,32 @@ public class PatientsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("FirstName,LastName,ContactNumber,AlternateContact,Email,DateOfBirth,Gender,Address,City,State,PostalCode,MedicalHistory,Allergies")] Patient patient)
     {
+        // Remove MRNumber from ModelState as it's auto-generated
+        ModelState.Remove("MRNumber");
+        
         if (ModelState.IsValid)
         {
-            await _patientService.CreatePatientAsync(patient);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _patientService.CreatePatientAsync(patient);
+                TempData["SuccessMessage"] = "Patient registered successfully!";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Error creating patient: {ex.Message}");
+            }
         }
+        
+        // Log validation errors for debugging
+        foreach (var modelState in ModelState.Values)
+        {
+            foreach (var error in modelState.Errors)
+            {
+                System.Diagnostics.Debug.WriteLine($"Validation Error: {error.ErrorMessage}");
+            }
+        }
+        
         return View(patient);
     }
 
@@ -89,16 +110,17 @@ public class PatientsController : Controller
             try
             {
                 await _patientService.UpdatePatientAsync(patient);
+                TempData["SuccessMessage"] = "Patient updated successfully!";
+                return RedirectToAction(nameof(Index));
             }
-            catch
+            catch (Exception ex)
             {
                 if (!await PatientExists(patient.Id))
                 {
                     return NotFound();
                 }
-                throw;
+                ModelState.AddModelError("", $"Error updating patient: {ex.Message}");
             }
-            return RedirectToAction(nameof(Index));
         }
         return View(patient);
     }
@@ -125,7 +147,15 @@ public class PatientsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        await _patientService.DeletePatientAsync(id);
+        try
+        {
+            await _patientService.DeletePatientAsync(id);
+            TempData["SuccessMessage"] = "Patient deleted successfully!";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Error deleting patient: {ex.Message}";
+        }
         return RedirectToAction(nameof(Index));
     }
 
