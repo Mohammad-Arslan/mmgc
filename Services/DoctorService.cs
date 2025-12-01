@@ -50,11 +50,25 @@ public class DoctorService : IDoctorService
         await _repository.UpdateAsync(doctor);
     }
 
-    public async Task<(bool CanDelete, List<string> BlockingRecords)> CheckDeleteDependenciesAsync(int id)
+    public async Task<(bool CanDelete, List<string> BlockingRecords, List<string> CascadeRecords)> CheckDeleteDependenciesAsync(int id)
     {
         var blockingRecords = new List<string>();
+        var cascadeRecords = new List<string>();
 
-        // Procedures have Cascade delete, so they don't block (will be deleted automatically)
+        // Procedures have Cascade delete (will be deleted automatically)
+        var proceduresCount = await _context.Procedures.CountAsync(p => p.DoctorId == id);
+        if (proceduresCount > 0)
+        {
+            cascadeRecords.Add($"{proceduresCount} Procedure(s)");
+        }
+
+        // DoctorSchedules have Cascade (will be deleted automatically)
+        var schedulesCount = await _context.DoctorSchedules.CountAsync(ds => ds.DoctorId == id);
+        if (schedulesCount > 0)
+        {
+            cascadeRecords.Add($"{schedulesCount} Schedule(s)");
+        }
+
         // Check Prescriptions (Restrict - blocks deletion)
         var prescriptionsCount = await _context.Prescriptions.CountAsync(pr => pr.DoctorId == id);
         if (prescriptionsCount > 0)
@@ -62,10 +76,9 @@ public class DoctorService : IDoctorService
             blockingRecords.Add($"{prescriptionsCount} Prescription(s)");
         }
 
-        // Appointments have SetNull, so they don't block
-        // DoctorSchedules have Cascade, so they don't block
+        // Appointments have SetNull, so they don't block (DoctorId will be set to NULL)
 
-        return (blockingRecords.Count == 0, blockingRecords);
+        return (blockingRecords.Count == 0, blockingRecords, cascadeRecords);
     }
 
     public async Task DeleteDoctorAsync(int id, bool forceDelete = false)

@@ -211,13 +211,57 @@
                         return attemptDelete(false)
                         .then(data => {
                             if (!data.success) {
-                                // Check if force delete is available
-                                if (data.canForceDelete && data.blockingRecords) {
+                                // Check if this is a warning about cascade records (no blocking records)
+                                if (data.isWarning && data.cascadeRecords && data.cascadeRecords.length > 0) {
+                                    // Show warning about cascade records that will be deleted
+                                    const cascadeList = data.cascadeRecords.map(r => `<li>${r}</li>`).join('');
+                                    Swal.fire({
+                                        title: 'Warning: Related Records Will Be Deleted',
+                                        html: `<p><strong>${data.message}</strong></p><p style="margin-top: 10px;">The following related records will also be deleted:</p><ul style="text-align: left; margin-top: 10px;">${cascadeList}</ul><p style="margin-top: 15px; color: #d33;"><strong>This action cannot be undone!</strong></p>`,
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonColor: '#d33',
+                                        cancelButtonColor: '#3085d6',
+                                        confirmButtonText: '<i class="bi bi-trash"></i> Delete Anyway',
+                                        cancelButtonText: '<i class="bi bi-x-circle"></i> Cancel',
+                                        reverseButtons: true,
+                                        showLoaderOnConfirm: true,
+                                        preConfirm: () => {
+                                            return attemptDelete(true)
+                                            .then(deleteData => {
+                                                if (!deleteData.success) {
+                                                    throw new Error(deleteData.message || 'Failed to delete doctor');
+                                                }
+                                                return deleteData;
+                                            });
+                                        }
+                                    }).then((deleteResult) => {
+                                        if (deleteResult.isConfirmed) {
+                                            Swal.fire({
+                                                title: 'Deleted!',
+                                                text: deleteResult.value.message || 'Doctor and all related records have been deleted.',
+                                                icon: 'success',
+                                                confirmButtonColor: '#3085d6',
+                                                timer: 2000,
+                                                timerProgressBar: true
+                                            }).then(() => {
+                                                location.reload();
+                                            });
+                                        }
+                                    });
+                                    // Prevent the original promise from resolving
+                                    return new Promise(() => {}); // Hang forever
+                                }
+                                // Check if force delete is available (blocking records exist)
+                                else if (data.canForceDelete && data.blockingRecords && data.blockingRecords.length > 0) {
                                     // Show blocking records and offer force delete
                                     const blockingList = data.blockingRecords.map(r => `<li>${r}</li>`).join('');
+                                    const cascadeList = data.cascadeRecords && data.cascadeRecords.length > 0 
+                                        ? `<p style="margin-top: 10px;">Also will be deleted:</p><ul style="text-align: left; margin-top: 5px;">${data.cascadeRecords.map(r => `<li>${r}</li>`).join('')}</ul>`
+                                        : '';
                                     Swal.fire({
                                         title: 'Cannot Delete',
-                                        html: `<p>${data.message}</p><ul style="text-align: left; margin-top: 10px;">${blockingList}</ul><p style="margin-top: 15px; color: #d33;"><strong>Warning:</strong> Force delete will remove this doctor even though it's referenced by other records. This may cause data inconsistency.</p>`,
+                                        html: `<p>${data.message}</p><ul style="text-align: left; margin-top: 10px;">${blockingList}</ul>${cascadeList}<p style="margin-top: 15px; color: #d33;"><strong>Warning:</strong> Force delete will remove this doctor even though it's referenced by other records. This may cause data inconsistency.</p>`,
                                         icon: 'error',
                                         showCancelButton: true,
                                         confirmButtonColor: '#d33',

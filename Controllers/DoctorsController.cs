@@ -153,7 +153,24 @@ public class DoctorsController : Controller
             }
 
             // Check dependencies first
-            var (canDelete, blockingRecords) = await _doctorService.CheckDeleteDependenciesAsync(id);
+            var (canDelete, blockingRecords, cascadeRecords) = await _doctorService.CheckDeleteDependenciesAsync(id);
+            
+            // If there are cascade records, show warning even if no blocking records
+            if (cascadeRecords.Any() && !forceDelete)
+            {
+                var warningMessage = cascadeRecords.Count == 1 
+                    ? $"Deleting this doctor will also delete {cascadeRecords[0]}."
+                    : $"Deleting this doctor will also delete: {string.Join(", ", cascadeRecords)}.";
+                
+                return Json(new { 
+                    success = false, 
+                    message = warningMessage,
+                    blockingRecords = blockingRecords,
+                    cascadeRecords = cascadeRecords,
+                    canForceDelete = true,
+                    isWarning = true
+                });
+            }
             
             if (!canDelete && !forceDelete)
             {
@@ -163,6 +180,7 @@ public class DoctorsController : Controller
                     success = false, 
                     message = blockingMessage,
                     blockingRecords = blockingRecords,
+                    cascadeRecords = cascadeRecords,
                     canForceDelete = true
                 });
             }
@@ -186,7 +204,7 @@ public class DoctorsController : Controller
         catch (DbUpdateException dbEx)
         {
             // Always check dependencies to provide better error message
-            var (_, blockingRecords) = await _doctorService.CheckDeleteDependenciesAsync(id);
+            var (_, blockingRecords, cascadeRecords) = await _doctorService.CheckDeleteDependenciesAsync(id);
             if (blockingRecords.Any())
             {
                 var blockingMessage = $"Cannot delete doctor. It is referenced by: {string.Join(", ", blockingRecords)}.";
@@ -194,6 +212,7 @@ public class DoctorsController : Controller
                     success = false, 
                     message = blockingMessage,
                     blockingRecords = blockingRecords,
+                    cascadeRecords = cascadeRecords,
                     canForceDelete = true
                 });
             }
@@ -207,7 +226,7 @@ public class DoctorsController : Controller
             // Check dependencies even for other exceptions
             try
             {
-                var (_, blockingRecords) = await _doctorService.CheckDeleteDependenciesAsync(id);
+                var (_, blockingRecords, cascadeRecords) = await _doctorService.CheckDeleteDependenciesAsync(id);
                 if (blockingRecords.Any())
                 {
                     var blockingMessage = $"Cannot delete doctor. It is referenced by: {string.Join(", ", blockingRecords)}.";
@@ -215,6 +234,7 @@ public class DoctorsController : Controller
                         success = false, 
                         message = blockingMessage,
                         blockingRecords = blockingRecords,
+                        cascadeRecords = cascadeRecords,
                         canForceDelete = true
                     });
                 }
