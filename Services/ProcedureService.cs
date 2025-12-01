@@ -39,7 +39,11 @@ public class ProcedureService : IProcedureService
     public async Task<Procedure> CreateProcedureAsync(Procedure procedure)
     {
         procedure.CreatedDate = DateTime.Now;
-        return await _repository.AddAsync(procedure);
+        
+        // Use context directly to avoid navigation property issues
+        await _context.Procedures.AddAsync(procedure);
+        await _context.SaveChangesAsync();
+        return procedure;
     }
 
     public async Task UpdateProcedureAsync(Procedure procedure)
@@ -48,12 +52,71 @@ public class ProcedureService : IProcedureService
         await _repository.UpdateAsync(procedure);
     }
 
-    public async Task DeleteProcedureAsync(int id)
+    public async Task<(bool CanDelete, List<string> BlockingRecords)> CheckDeleteDependenciesAsync(int id)
     {
-        var procedure = await _repository.GetByIdAsync(id);
-        if (procedure != null)
+        var blockingRecords = new List<string>();
+
+        // Check LabTests
+        var labTestsCount = await _context.LabTests.CountAsync(lt => lt.ProcedureId == id);
+        if (labTestsCount > 0)
         {
-            await _repository.DeleteAsync(procedure);
+            blockingRecords.Add($"{labTestsCount} Lab Test(s)");
+        }
+
+        // Check Transactions
+        var transactionsCount = await _context.Transactions.CountAsync(t => t.ProcedureId == id);
+        if (transactionsCount > 0)
+        {
+            blockingRecords.Add($"{transactionsCount} Transaction(s)");
+        }
+
+        // Check Prescriptions
+        var prescriptionsCount = await _context.Prescriptions.CountAsync(pr => pr.ProcedureId == id);
+        if (prescriptionsCount > 0)
+        {
+            blockingRecords.Add($"{prescriptionsCount} Prescription(s)");
+        }
+
+        return (blockingRecords.Count == 0, blockingRecords);
+    }
+
+    public async Task DeleteProcedureAsync(int id, bool forceDelete = false)
+    {
+        // Check if procedure exists
+        var exists = await _context.Procedures.AnyAsync(p => p.Id == id);
+        if (!exists)
+        {
+            throw new InvalidOperationException($"Procedure with ID {id} not found.");
+        }
+
+        // Always use transaction and set FKs to NULL first to avoid constraint issues
+        // SQL Server's SET NULL behavior doesn't work reliably with raw SQL DELETE
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            // Set foreign keys to NULL in related tables first
+            await _context.Database.ExecuteSqlRawAsync(
+                "UPDATE LabTests SET ProcedureId = NULL WHERE ProcedureId = {0}", id);
+            await _context.Database.ExecuteSqlRawAsync(
+                "UPDATE Transactions SET ProcedureId = NULL WHERE ProcedureId = {0}", id);
+            await _context.Database.ExecuteSqlRawAsync(
+                "UPDATE Prescriptions SET ProcedureId = NULL WHERE ProcedureId = {0}", id);
+            
+            // Now delete the procedure
+            var rowsAffected = await _context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM Procedures WHERE Id = {0}", id);
+
+            if (rowsAffected == 0)
+            {
+                throw new InvalidOperationException($"Procedure with ID {id} could not be deleted.");
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 }

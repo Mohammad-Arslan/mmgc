@@ -8,13 +8,17 @@ public class Procedure
     [Key]
     public int Id { get; set; }
 
-    [Required]
+    // Make nullable to allow empty option from the select to bind to null.
+    // Keep Required so validation still forces user to pick one.
+    [Required(ErrorMessage = "Please select a patient.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a valid patient.")]
     [Display(Name = "Patient")]
-    public int PatientId { get; set; }
+    public int? PatientId { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "Please select a doctor.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a valid doctor.")]
     [Display(Name = "Doctor")]
-    public int DoctorId { get; set; }
+    public int? DoctorId { get; set; }
 
     [Display(Name = "Nurse")]
     public int? NurseId { get; set; }
@@ -27,7 +31,7 @@ public class Procedure
     [Required]
     [StringLength(50)]
     [Display(Name = "Procedure Type")]
-    public string ProcedureType { get; set; } = string.Empty; // Normal Delivery, C-section, Ultrasound, Gynaecological, Surgery, OPD, IPD, Other
+    public string ProcedureType { get; set; } = string.Empty;
 
     [Display(Name = "Procedure Date")]
     [DataType(DataType.DateTime)]
@@ -47,7 +51,7 @@ public class Procedure
 
     [StringLength(20)]
     [Display(Name = "Status")]
-    public string Status { get; set; } = "Scheduled"; // Scheduled, In Progress, Completed, Cancelled
+    public string Status { get; set; } = "Scheduled";
 
     [Display(Name = "Created Date")]
     public DateTime CreatedDate { get; set; } = DateTime.Now;
@@ -59,12 +63,12 @@ public class Procedure
     [Display(Name = "Created By")]
     public string? CreatedBy { get; set; }
 
-    // Navigation properties
+    // Navigation properties (EF)
     [ForeignKey("PatientId")]
-    public virtual Patient Patient { get; set; } = null!;
+    public virtual Patient? Patient { get; set; }
 
     [ForeignKey("DoctorId")]
-    public virtual Doctor Doctor { get; set; } = null!;
+    public virtual Doctor? Doctor { get; set; }
 
     [ForeignKey("NurseId")]
     public virtual Nurse? Nurse { get; set; }

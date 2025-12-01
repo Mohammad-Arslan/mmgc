@@ -8,5 +8,6 @@ public interface IProcedureService
     Task<Procedure?> GetProcedureByIdAsync(int id);
     Task<Procedure> CreateProcedureAsync(Procedure procedure);
     Task UpdateProcedureAsync(Procedure procedure);
-    Task DeleteProcedureAsync(int id);
+    Task<(bool CanDelete, List<string> BlockingRecords)> CheckDeleteDependenciesAsync(int id);
+    Task DeleteProcedureAsync(int id, bool forceDelete = false);
 }

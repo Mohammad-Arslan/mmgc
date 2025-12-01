@@ -4,6 +4,7 @@ using MMGC.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MMGC.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251201103032_MakeProcedureFkNullable")]
+    partial class MakeProcedureFkNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -900,8 +903,7 @@ namespace MMGC.Migrations
 
                     b.HasOne("MMGC.Models.Procedure", "Procedure")
                         .WithMany()
-                        .HasForeignKey("ProcedureId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ProcedureId");
 
                     b.Navigation("Appointment");
 
@@ -917,7 +919,7 @@ namespace MMGC.Migrations
                     b.HasOne("MMGC.Models.Doctor", "Doctor")
                         .WithMany("Procedures")
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MMGC.Models.Nurse", "Nurse")
@@ -956,8 +958,7 @@ namespace MMGC.Migrations
 
                     b.HasOne("MMGC.Models.Procedure", "Procedure")
                         .WithMany()
-                        .HasForeignKey("ProcedureId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ProcedureId");
 
                     b.Navigation("Appointment");
 

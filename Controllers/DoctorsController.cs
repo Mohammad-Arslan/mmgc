@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MMGC.Models;
 using MMGC.Services;
 
@@ -141,7 +142,7 @@ public class DoctorsController : Controller
     // POST: Doctors/Delete/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, bool forceDelete = false)
     {
         try
         {
@@ -151,13 +152,80 @@ public class DoctorsController : Controller
                 return Json(new { success = false, message = "Doctor not found." });
             }
 
-            await _doctorService.DeleteDoctorAsync(id);
-            TempData["SuccessMessage"] = "Doctor deleted successfully!";
-            return Json(new { success = true, message = "Doctor deleted successfully!" });
+            // Check dependencies first
+            var (canDelete, blockingRecords) = await _doctorService.CheckDeleteDependenciesAsync(id);
+            
+            if (!canDelete && !forceDelete)
+            {
+                // Return blocking records so frontend can show force delete option
+                var blockingMessage = $"Cannot delete doctor. It is referenced by: {string.Join(", ", blockingRecords)}.";
+                return Json(new { 
+                    success = false, 
+                    message = blockingMessage,
+                    blockingRecords = blockingRecords,
+                    canForceDelete = true
+                });
+            }
+
+            // Proceed with deletion (normal or force)
+            await _doctorService.DeleteDoctorAsync(id, forceDelete);
+            TempData["SuccessMessage"] = forceDelete 
+                ? "Doctor force deleted successfully!" 
+                : "Doctor deleted successfully!";
+            return Json(new { 
+                success = true, 
+                message = forceDelete 
+                    ? "Doctor force deleted successfully!" 
+                    : "Doctor deleted successfully!" 
+            });
         }
-        catch (Exception ex)
+        catch (DbUpdateConcurrencyException)
         {
-            return Json(new { success = false, message = $"Error deleting doctor: {ex.Message}" });
+            return Json(new { success = false, message = "The doctor was modified by another user. Please refresh and try again." });
+        }
+        catch (DbUpdateException dbEx)
+        {
+            // Always check dependencies to provide better error message
+            var (_, blockingRecords) = await _doctorService.CheckDeleteDependenciesAsync(id);
+            if (blockingRecords.Any())
+            {
+                var blockingMessage = $"Cannot delete doctor. It is referenced by: {string.Join(", ", blockingRecords)}.";
+                return Json(new { 
+                    success = false, 
+                    message = blockingMessage,
+                    blockingRecords = blockingRecords,
+                    canForceDelete = true
+                });
+            }
+            
+            // If no blocking records found but still error, show generic message
+            var innerMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+            return Json(new { success = false, message = $"Cannot delete doctor. Please try again or contact support if the issue persists." });
+        }
+        catch (Exception)
+        {
+            // Check dependencies even for other exceptions
+            try
+            {
+                var (_, blockingRecords) = await _doctorService.CheckDeleteDependenciesAsync(id);
+                if (blockingRecords.Any())
+                {
+                    var blockingMessage = $"Cannot delete doctor. It is referenced by: {string.Join(", ", blockingRecords)}.";
+                    return Json(new { 
+                        success = false, 
+                        message = blockingMessage,
+                        blockingRecords = blockingRecords,
+                        canForceDelete = true
+                    });
+                }
+            }
+            catch { }
+            
+            // Final fallback - show user-friendly message
+            return Json(new { 
+                success = false, 
+                message = "Cannot delete doctor. It may be referenced by other records. Please check and try again."
+            });
         }
     }
 

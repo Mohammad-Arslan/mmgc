@@ -57,7 +57,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(p => p.Doctor)
             .WithMany(d => d.Procedures)
             .HasForeignKey(p => p.DoctorId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<Procedure>()
             .HasOne(p => p.Nurse)
@@ -89,6 +89,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(t => t.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Entity<Transaction>()
+            .HasOne(t => t.Procedure)
+            .WithMany()
+            .HasForeignKey(t => t.ProcedureId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.Entity<Prescription>()
             .HasOne(pr => pr.Patient)
             .WithMany(p => p.Prescriptions)
@@ -100,6 +106,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany()
             .HasForeignKey(pr => pr.DoctorId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Prescription>()
+            .HasOne(pr => pr.Procedure)
+            .WithMany()
+            .HasForeignKey(pr => pr.ProcedureId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Entity<DoctorSchedule>()
             .HasOne(ds => ds.Doctor)

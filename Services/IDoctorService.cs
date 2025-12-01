@@ -9,7 +9,8 @@ public interface IDoctorService
     Task<Doctor?> GetDoctorWithDetailsAsync(int id);
     Task<Doctor> CreateDoctorAsync(Doctor doctor);
     Task UpdateDoctorAsync(Doctor doctor);
-    Task DeleteDoctorAsync(int id);
+    Task<(bool CanDelete, List<string> BlockingRecords)> CheckDeleteDependenciesAsync(int id);
+    Task DeleteDoctorAsync(int id, bool forceDelete = false);
     Task<decimal> GetDoctorTotalRevenueAsync(int doctorId);
     Task<int> GetDoctorAppointmentCountAsync(int doctorId);
 }

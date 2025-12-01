@@ -50,12 +50,64 @@ public class DoctorService : IDoctorService
         await _repository.UpdateAsync(doctor);
     }
 
-    public async Task DeleteDoctorAsync(int id)
+    public async Task<(bool CanDelete, List<string> BlockingRecords)> CheckDeleteDependenciesAsync(int id)
     {
-        var doctor = await _repository.GetByIdAsync(id);
-        if (doctor != null)
+        var blockingRecords = new List<string>();
+
+        // Procedures have Cascade delete, so they don't block (will be deleted automatically)
+        // Check Prescriptions (Restrict - blocks deletion)
+        var prescriptionsCount = await _context.Prescriptions.CountAsync(pr => pr.DoctorId == id);
+        if (prescriptionsCount > 0)
         {
-            await _repository.DeleteAsync(doctor);
+            blockingRecords.Add($"{prescriptionsCount} Prescription(s)");
+        }
+
+        // Appointments have SetNull, so they don't block
+        // DoctorSchedules have Cascade, so they don't block
+
+        return (blockingRecords.Count == 0, blockingRecords);
+    }
+
+    public async Task DeleteDoctorAsync(int id, bool forceDelete = false)
+    {
+        // Check if doctor exists
+        var exists = await _context.Doctors.AnyAsync(d => d.Id == id);
+        if (!exists)
+        {
+            throw new InvalidOperationException($"Doctor with ID {id} not found.");
+        }
+
+        // Always use transaction and set FKs to NULL first to avoid constraint issues
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            // Set foreign keys to NULL in related tables first
+            // Prescriptions (Restrict - need to set NULL manually)
+            await _context.Database.ExecuteSqlRawAsync(
+                "UPDATE Prescriptions SET DoctorId = NULL WHERE DoctorId = {0}", id);
+            
+            // Appointments have SetNull, but set explicitly to be safe
+            await _context.Database.ExecuteSqlRawAsync(
+                "UPDATE Appointments SET DoctorId = NULL WHERE DoctorId = {0}", id);
+            
+            // Procedures will be deleted automatically by Cascade
+            // DoctorSchedules will be deleted automatically by Cascade
+            
+            // Now delete the doctor (Procedures and DoctorSchedules will cascade automatically)
+            var rowsAffected = await _context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM Doctors WHERE Id = {0}", id);
+
+            if (rowsAffected == 0)
+            {
+                throw new InvalidOperationException($"Doctor with ID {id} could not be deleted.");
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 
