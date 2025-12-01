@@ -1,68 +1,145 @@
 @model IEnumerable<MMGC.Models.Doctor>
 @{
     ViewData["Title"] = "Doctors";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
     var doctorsWithStats = ViewBag.DoctorsWithStats as IEnumerable<dynamic>;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-person-badge"></i> Doctors</h2>
-    <a asp-action="Create" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> New Doctor
-    </a>
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-person-badge"></i> Doctors</h2>
+            <p>Manage medical staff</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add New Doctor
+        </a>
+    </div>
 </div>
 
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="tableSearch" class="form-control" placeholder="Search doctors by name, specialization...">
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="badge bg-info fs-6">Total: @Model.Count() Doctors</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Doctors Table -->
 <div class="card">
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Specialization</th>
-                        <th>Contact</th>
-                        <th>Email</th>
-                        <th>Appointments</th>
-                        <th>Total Revenue</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
-                        var stats = doctorsWithStats?.Cast<dynamic>().FirstOrDefault(d => d.Id == item.Id);
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
                         <tr>
-                            <td><strong>@item.FullName</strong></td>
-                            <td>@item.Specialization</td>
-                            <td>@(item.ContactNumber ?? "-")</td>
-                            <td>@(item.Email ?? "-")</td>
-                            <td>@(stats?.TotalAppointments ?? 0)</td>
-                            <td>₹@((stats?.TotalRevenue ?? 0).ToString("N2"))</td>
-                            <td>
-                                @if (item.IsActive)
-                                {
-                                    <span class="badge bg-success">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary">Inactive</span>
-                                }
-                            </td>
-                            <td>
-                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">
-                                    <i class="bi bi-eye"></i> View
-                                </a>
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </a>
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">
-                                    <i class="bi bi-trash"></i> Delete
-                                </a>
-                            </td>
+                            <th><i class="bi bi-person"></i> Name</th>
+                            <th><i class="bi bi-award"></i> Specialization</th>
+                            <th><i class="bi bi-telephone"></i> Contact</th>
+                            <th><i class="bi bi-envelope"></i> Email</th>
+                            <th><i class="bi bi-calendar-check"></i> Appointments</th>
+                            <th><i class="bi bi-cash"></i> Total Revenue</th>
+                            <th><i class="bi bi-toggle-on"></i> Status</th>
+                            <th><i class="bi bi-gear"></i> Actions</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var stats = doctorsWithStats?.Cast<dynamic>().FirstOrDefault(d => d.Id == item.Id);
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-info text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            @item.FullName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <strong>@item.FullName</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@item.Specialization</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.ContactNumber))
+                                    {
+                                        <i class="bi bi-phone"></i>
+                                        @item.ContactNumber
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Email))
+                                    {
+                                        <i class="bi bi-envelope-fill text-info"></i>
+                                        @item.Email
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">@(stats?.TotalAppointments ?? 0)</span>
+                                </td>
+                                <td>
+                                    <strong class="text-success">₹@((stats?.TotalRevenue ?? 0).ToString("N2"))</strong>
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle"></i> Inactive
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="View Profile">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger delete-action" data-bs-toggle="tooltip" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-person-badge" style="font-size: 4rem; color: #e0e0e0;"></i>
+                <p class="text-muted mt-3 mb-0">No doctors added yet.</p>
+                <a asp-action="Create" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Add First Doctor
+                </a>
+            </div>
+        }
     </div>
 </div>

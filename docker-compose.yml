@@ -75,7 +75,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:${WEBAPP_PORT:-5003}
       - ConnectionStrings__DefaultConnection=Server=mssql,1433;Database=${MSSQL_DATABASE};User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
-      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - DOTNET_USE_POLLING_FILE_WATCHER=false
       - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
       - DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER=true
     ports:

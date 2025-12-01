@@ -1,75 +1,129 @@
 @model IEnumerable<MMGC.Models.Appointment>
 @{
     ViewData["Title"] = "Appointments";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-calendar-check"></i> Appointments</h2>
-    <a asp-action="Create" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> New Appointment
-    </a>
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-calendar-check"></i> Appointments</h2>
+            <p>Manage all patient appointments</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Appointment
+        </a>
+    </div>
 </div>
 
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="tableSearch" class="form-control" placeholder="Search appointments...">
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="badge bg-primary fs-6">Total: @Model.Count() Appointments</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Appointments Table -->
 <div class="card">
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Patient</th>
-                        <th>Doctor</th>
-                        <th>Date & Time</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
                         <tr>
-                            <td>@item.Patient?.FullName</td>
-                            <td>@(item.Doctor?.FullName ?? "Not Assigned")</td>
-                            <td>@item.AppointmentDate.ToString("dd MMM yyyy hh:mm tt")</td>
-                            <td>@item.AppointmentType</td>
-                            <td>
-                                @{
-                                    var statusClass = item.Status switch
-                                    {
-                                        "Scheduled" => "bg-primary",
-                                        "Confirmed" => "bg-success",
-                                        "Completed" => "bg-info",
-                                        "Cancelled" => "bg-danger",
-                                        _ => "bg-secondary"
-                                    };
-                                }
-                                <span class="badge @statusClass">@item.Status</span>
-                            </td>
-                            <td>
-                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <button onclick="sendSMS(@item.Id)" class="btn btn-sm btn-success" title="Send SMS">
-                                    <i class="bi bi-chat-text"></i>
-                                </button>
-                                <button onclick="sendWhatsApp(@item.Id)" class="btn btn-sm btn-success" title="Send WhatsApp">
-                                    <i class="bi bi-whatsapp"></i>
-                                </button>
-                            </td>
+                            <th><i class="bi bi-person"></i> Patient</th>
+                            <th><i class="bi bi-person-badge"></i> Doctor</th>
+                            <th><i class="bi bi-calendar"></i> Date & Time</th>
+                            <th><i class="bi bi-tag"></i> Type</th>
+                            <th><i class="bi bi-info-circle"></i> Status</th>
+                            <th><i class="bi bi-gear"></i> Actions</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            @(item.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
+                                        </div>
+                                        <strong>@item.Patient?.FullName</strong>
+                                    </div>
+                                </td>
+                                <td>@(item.Doctor?.FullName ?? "Not Assigned")</td>
+                                <td>
+                                    <i class="bi bi-clock-fill text-primary"></i> 
+                                    @item.AppointmentDate.ToString("dd MMM yyyy hh:mm tt")
+                                </td>
+                                <td><span class="badge bg-secondary">@item.AppointmentType</span></td>
+                                <td>
+                                    @{
+                                        var statusClass = item.Status switch
+                                        {
+                                            "Scheduled" => "bg-primary",
+                                            "Confirmed" => "bg-success",
+                                            "Completed" => "bg-info",
+                                            "Cancelled" => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                    }
+                                    <span class="badge @statusClass">
+                                        <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> @item.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button onclick="sendSMS(@item.Id)" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Send SMS">
+                                            <i class="bi bi-chat-text"></i>
+                                        </button>
+                                        <button onclick="sendWhatsApp(@item.Id)" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Send WhatsApp">
+                                            <i class="bi bi-whatsapp"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-calendar-x" style="font-size: 4rem; color: #e0e0e0;"></i>
+                <p class="text-muted mt-3 mb-0">No appointments found.</p>
+                <a asp-action="Create" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Schedule First Appointment
+                </a>
+            </div>
+        }
     </div>
 </div>
 
 @section Scripts {
     <script>
         function sendSMS(id) {
+            if (!confirm('Send SMS notification for this appointment?')) return;
+            
             fetch(`/Appointments/SendSMS/${id}`, { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
@@ -78,10 +132,15 @@
                     } else {
                         alert('Failed to send SMS');
                     }
+                })
+                .catch(error => {
+                    alert('Error sending SMS: ' + error);
                 });
         }
 
         function sendWhatsApp(id) {
+            if (!confirm('Send WhatsApp notification for this appointment?')) return;
+            
             fetch(`/Appointments/SendWhatsApp/${id}`, { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
@@ -90,6 +149,9 @@
                     } else {
                         alert('Failed to send WhatsApp message');
                     }
+                })
+                .catch(error => {
+                    alert('Error sending WhatsApp: ' + error);
                 });
         }
     </script>
