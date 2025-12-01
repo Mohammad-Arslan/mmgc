@@ -78,8 +78,16 @@ public class DoctorsController : Controller
     {
         if (ModelState.IsValid)
         {
-            await _doctorService.CreateDoctorAsync(doctor);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _doctorService.CreateDoctorAsync(doctor);
+                TempData["SuccessMessage"] = "Doctor added successfully!";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Error creating doctor: {ex.Message}");
+            }
         }
         return View(doctor);
     }
@@ -115,44 +123,42 @@ public class DoctorsController : Controller
             try
             {
                 await _doctorService.UpdateDoctorAsync(doctor);
+                TempData["SuccessMessage"] = "Doctor updated successfully!";
+                return RedirectToAction(nameof(Index));
             }
-            catch
+            catch (Exception ex)
             {
                 if (!await DoctorExists(doctor.Id))
                 {
                     return NotFound();
                 }
-                throw;
+                ModelState.AddModelError("", $"Error updating doctor: {ex.Message}");
             }
-            return RedirectToAction(nameof(Index));
         }
-        return View(doctor);
-    }
-
-    // GET: Doctors/Delete/5
-    public async Task<IActionResult> Delete(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var doctor = await _doctorService.GetDoctorByIdAsync(id.Value);
-        if (doctor == null)
-        {
-            return NotFound();
-        }
-
         return View(doctor);
     }
 
     // POST: Doctors/Delete/5
-    [HttpPost, ActionName("Delete")]
+    [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        await _doctorService.DeleteDoctorAsync(id);
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            var doctor = await _doctorService.GetDoctorByIdAsync(id);
+            if (doctor == null)
+            {
+                return Json(new { success = false, message = "Doctor not found." });
+            }
+
+            await _doctorService.DeleteDoctorAsync(id);
+            TempData["SuccessMessage"] = "Doctor deleted successfully!";
+            return Json(new { success = true, message = "Doctor deleted successfully!" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error deleting doctor: {ex.Message}" });
+        }
     }
 
     private async Task<bool> DoctorExists(int id)

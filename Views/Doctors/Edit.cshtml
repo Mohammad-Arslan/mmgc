@@ -1,6 +1,6 @@
 @model MMGC.Models.Doctor
 @{
-    ViewData["Title"] = "Create Doctor";
+    ViewData["Title"] = "Edit Doctor";
     Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
 }
 
@@ -8,8 +8,8 @@
 <div class="page-header">
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <h2><i class="bi bi-person-plus"></i> Add New Doctor</h2>
-            <p>Register a new doctor to the system</p>
+            <h2><i class="bi bi-pencil"></i> Edit Doctor</h2>
+            <p>Update doctor information</p>
         </div>
         <a asp-action="Index" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back to List
@@ -21,7 +21,8 @@
     <div class="col-lg-10 col-xl-8">
         <div class="card">
             <div class="card-body">
-                <form asp-action="Create" method="post" id="doctorForm">
+                <form asp-action="Edit" method="post" id="doctorForm">
+                    <input type="hidden" asp-for="Id" />
                     <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
                     
                     <h5 class="mb-3"><i class="bi bi-person"></i> Personal Information</h5>
@@ -88,7 +89,7 @@
                     <hr class="my-4">
 
                     <div class="mb-3 form-check">
-                        <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
                         <label asp-for="IsActive" class="form-check-label">
                             Doctor is active and available for appointments
                         </label>
@@ -96,7 +97,7 @@
 
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary" id="submitBtn">
-                            <i class="bi bi-save"></i> Add Doctor
+                            <i class="bi bi-save"></i> Update Doctor
                         </button>
                         <a asp-action="Index" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancel
@@ -120,7 +121,7 @@
                     }, 500);
                     return false;
                 }
-                $('#submitBtn').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Adding...');
+                $('#submitBtn').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Updating...');
             });
 
             $('input, select, textarea').on('blur', function() {
@@ -129,3 +130,4 @@
         });
     </script>
 }
+

@@ -18,6 +18,24 @@
     </div>
 </div>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@Html.AntiForgeryToken()
+
 <!-- Search and Filter -->
 <div class="card mb-4">
     <div class="card-body">
@@ -120,9 +138,9 @@
                                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger delete-action" data-bs-toggle="tooltip" title="Delete">
+                                        <button type="button" class="btn btn-sm btn-danger delete-doctor" data-doctor-id="@item.Id" data-doctor-name="@item.FullName" data-bs-toggle="tooltip" title="Delete">
                                             <i class="bi bi-trash"></i>
-                                        </a>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -143,3 +161,76 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // SweetAlert Delete Confirmation
+            $('.delete-doctor').on('click', function() {
+                const doctorId = $(this).data('doctor-id');
+                const doctorName = $(this).data('doctor-name');
+                const deleteUrl = '@Url.Action("Delete", "Doctors")';
+                const token = $('input[name="__RequestVerificationToken"]').val();
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    html: `You are about to delete <strong>${doctorName}</strong>.<br>This action cannot be undone!`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: '<i class="bi bi-trash"></i> Yes, delete it!',
+                    cancelButtonText: '<i class="bi bi-x-circle"></i> Cancel',
+                    reverseButtons: true,
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        // Create form data for anti-forgery token
+                        const formData = new FormData();
+                        formData.append('id', doctorId);
+                        formData.append('__RequestVerificationToken', token);
+
+                        return fetch(deleteUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (!data.success) {
+                                throw new Error(data.message || 'Failed to delete doctor');
+                            }
+                            return data;
+                        })
+                        .catch(error => {
+                            Swal.showValidationMessage(`Request failed: ${error.message}`);
+                        });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: result.value.message || 'Doctor has been deleted.',
+                            icon: 'success',
+                            confirmButtonColor: '#3085d6',
+                            timer: 2000,
+                            timerProgressBar: true
+                        }).then(() => {
+                            location.reload();
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}
