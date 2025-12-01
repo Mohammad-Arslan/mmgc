@@ -20,6 +20,24 @@ services:
       retries: 20
       start_period: 60s
 
+  # Database initialization - ensures database exists before other services connect
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mmgc-db-init
+    environment:
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_DATABASE=${MSSQL_DATABASE:-MMGC}
+      - MSSQL_HOST=mssql
+    volumes:
+      - ./create-db.sh:/create-db.sh:ro
+    networks:
+      - mmgc-network
+    depends_on:
+      mssql:
+        condition: service_healthy
+    command: bash /create-db.sh
+    restart: "no"
+
   # SQLPad for database UI
   sqlpad:
     image: sqlpad/sqlpad:latest
@@ -40,6 +58,8 @@ services:
     depends_on:
       mssql:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     networks:
       - mmgc-network
     volumes:
@@ -68,6 +88,8 @@ services:
     depends_on:
       mssql:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     networks:
       - mmgc-network
     command: dotnet watch run --urls http://0.0.0.0:${WEBAPP_PORT:-5003} --project MMGC.csproj

@@ -78,17 +78,35 @@ app.MapControllerRoute(
 
 app.MapRazorPages(); // Required for Identity UI
 
-// Seed roles and admin user
+// Ensure database is migrated and seed roles and admin user
 using (var scope = app.Services.CreateScope())
 {
     try
     {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        
+        // Ensure database is created and migrations are applied
+        logger.LogInformation("Ensuring database is created...");
+        await context.Database.EnsureCreatedAsync();
+        
+        // Apply pending migrations
+        logger.LogInformation("Applying pending migrations...");
+        await context.Database.MigrateAsync();
+        
+        // Wait a moment for migrations to complete
+        await Task.Delay(1000);
+        
+        // Seed roles and admin user
+        logger.LogInformation("Starting database seeding...");
         await DbInitializer.SeedRolesAndAdminUser(scope.ServiceProvider);
+        logger.LogInformation("Database seeding completed successfully.");
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
+        // Don't exit - allow app to start even if seeding fails
     }
 }
 

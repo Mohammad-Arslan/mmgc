@@ -187,31 +187,66 @@ fi
 
 # Run migrations using migrate.sh script
 echo -e "${GREEN}Running EF Core migrations...${NC}"
+MIGRATION_SUCCESS=false
 if [ -f "./migrate.sh" ]; then
     chmod +x ./migrate.sh
-    if ./migrate.sh update; then
+    if ./migrate.sh update 2>&1; then
         echo -e "${GREEN}Migrations completed successfully!${NC}"
+        MIGRATION_SUCCESS=true
     else
-        echo -e "${YELLOW}Note: Migrations may need to be created first.${NC}"
-        echo -e "${YELLOW}Run: ./migrate.sh add InitialCreate${NC}"
-    fi
-else
-    echo -e "${YELLOW}Warning: migrate.sh not found, attempting direct migration...${NC}"
-    if docker exec mmgc-webapp dotnet ef database update --project MMGC.csproj 2>&1; then
-        echo -e "${GREEN}Migrations completed successfully!${NC}"
-    else
-        echo -e "${YELLOW}Note: If migrations fail, you may need to create an initial migration first.${NC}"
-        echo -e "${YELLOW}Run: docker exec -it mmgc-webapp dotnet ef migrations add InitialCreate --project MMGC.csproj${NC}"
+        echo -e "${YELLOW}Warning: migrate.sh returned error, trying direct migration...${NC}"
     fi
 fi
 
-# Wait a moment for seeding to complete
-echo -e "${YELLOW}Waiting for database seeding to complete...${NC}"
+# If migrate.sh failed or doesn't exist, try direct migration
+if [ "$MIGRATION_SUCCESS" = false ]; then
+    echo -e "${YELLOW}Attempting direct migration...${NC}"
+    if docker exec mmgc-webapp dotnet ef database update --project MMGC.csproj 2>&1; then
+        echo -e "${GREEN}Migrations completed successfully!${NC}"
+        MIGRATION_SUCCESS=true
+    else
+        echo -e "${RED}Error: Failed to apply migrations${NC}"
+        echo -e "${YELLOW}Check logs: docker logs mmgc-webapp${NC}"
+        exit 1
+    fi
+fi
+
+# Wait for migrations to be fully applied
+echo -e "${YELLOW}Waiting for migrations to be fully applied...${NC}"
+sleep 3
+
+# Verify migrations were applied by checking if Identity tables exist
+echo -e "${GREEN}Verifying database schema...${NC}"
+if docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d "$MSSQL_DATABASE" -C -Q "IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AspNetRoles') SELECT 1 ELSE SELECT 0" -b | grep -q "1"; then
+    echo -e "${GREEN}Database schema verified!${NC}"
+else
+    echo -e "${RED}Error: Database schema not found. Migrations may have failed.${NC}"
+    exit 1
+fi
+
+# Wait for webapp to be ready before seeding
+echo -e "${YELLOW}Waiting for webapp to be fully ready...${NC}"
 sleep 5
 
-# Restart webapp container to ensure seeding runs
-echo -e "${GREEN}Restarting webapp container to apply seeding...${NC}"
+# Trigger seeding by restarting webapp - seeding runs on startup
+echo -e "${GREEN}Restarting webapp container to trigger database seeding...${NC}"
 $DOCKER_COMPOSE_CMD restart webapp
+
+# Wait for seeding to complete
+echo -e "${YELLOW}Waiting for database seeding to complete...${NC}"
+sleep 10
+
+# Verify seeding was successful
+echo -e "${GREEN}Verifying database seeding...${NC}"
+ROLE_COUNT=$(docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d "$MSSQL_DATABASE" -C -Q "SELECT COUNT(*) FROM AspNetRoles" -h -1 -W 2>/dev/null | tr -d '[:space:]' || echo "0")
+USER_COUNT=$(docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d "$MSSQL_DATABASE" -C -Q "SELECT COUNT(*) FROM AspNetUsers" -h -1 -W 2>/dev/null | tr -d '[:space:]' || echo "0")
+
+if [ "$ROLE_COUNT" -ge "5" ] && [ "$USER_COUNT" -ge "1" ]; then
+    echo -e "${GREEN}Database seeding verified! Found $ROLE_COUNT roles and $USER_COUNT users.${NC}"
+else
+    echo -e "${YELLOW}Warning: Seeding may not have completed. Found $ROLE_COUNT roles and $USER_COUNT users.${NC}"
+    echo -e "${YELLOW}Check webapp logs: docker logs mmgc-webapp${NC}"
+fi
 
 echo ""
 echo -e "${GREEN}================================${NC}"
