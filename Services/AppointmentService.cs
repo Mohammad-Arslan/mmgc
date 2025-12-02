@@ -9,11 +9,19 @@ public class AppointmentService : IAppointmentService
 {
     private readonly IRepository<Appointment> _repository;
     private readonly ApplicationDbContext _context;
+    private readonly ISmsService _smsService;
+    private readonly ILogger<AppointmentService> _logger;
 
-    public AppointmentService(IRepository<Appointment> repository, ApplicationDbContext context)
+    public AppointmentService(
+        IRepository<Appointment> repository, 
+        ApplicationDbContext context,
+        ISmsService smsService,
+        ILogger<AppointmentService> logger)
     {
         _repository = repository;
         _context = context;
+        _smsService = smsService;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<Appointment>> GetAllAppointmentsAsync()
@@ -80,15 +88,78 @@ public class AppointmentService : IAppointmentService
 
     public async Task<bool> SendSMSNotificationAsync(int appointmentId)
     {
-        var appointment = await GetAppointmentByIdAsync(appointmentId);
-        if (appointment == null || appointment.Patient == null)
-            return false;
+        try
+        {
+            var appointment = await GetAppointmentByIdAsync(appointmentId);
+            if (appointment == null || appointment.Patient == null)
+            {
+                _logger.LogWarning("Appointment {AppointmentId} not found or patient is null", appointmentId);
+                return false;
+            }
 
-        // TODO: Implement actual SMS sending logic (Twilio, etc.)
-        // For now, just mark as sent
-        appointment.SMSSent = true;
-        await _repository.UpdateAsync(appointment);
-        return true;
+            // Check if patient has a contact number
+            if (string.IsNullOrWhiteSpace(appointment.Patient.ContactNumber))
+            {
+                _logger.LogWarning("Patient {PatientId} does not have a contact number", appointment.Patient.Id);
+                return false;
+            }
+
+            // Build SMS message
+            var message = BuildAppointmentSmsMessage(appointment);
+
+            // Send SMS via Twilio
+            var smsSent = await _smsService.SendSmsAsync(appointment.Patient.ContactNumber, message);
+
+            if (smsSent)
+            {
+                // Mark as sent in database
+                appointment.SMSSent = true;
+                _context.Appointments.Update(appointment);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("SMS notification sent successfully for appointment {AppointmentId}", appointmentId);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to send SMS for appointment {AppointmentId}", appointmentId);
+            }
+
+            return smsSent;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending SMS notification for appointment {AppointmentId}", appointmentId);
+            return false;
+        }
+    }
+
+    private string BuildAppointmentSmsMessage(Appointment appointment)
+    {
+        var patientName = appointment.Patient?.FullName ?? "Patient";
+        var appointmentDate = appointment.AppointmentDate.ToString("dd MMM yyyy hh:mm tt");
+        var doctorName = appointment.Doctor?.FullName ?? "Not Assigned";
+        var appointmentType = appointment.AppointmentType;
+        var status = appointment.Status;
+
+        var message = $"Hello {patientName},\n\n";
+        message += $"Your appointment is scheduled:\n";
+        message += $"Date & Time: {appointmentDate}\n";
+        message += $"Type: {appointmentType}\n";
+        message += $"Doctor: {doctorName}\n";
+        message += $"Status: {status}\n";
+
+        if (!string.IsNullOrWhiteSpace(appointment.Reason))
+        {
+            message += $"\nReason: {appointment.Reason}\n";
+        }
+
+        if (appointment.ConsultationFee > 0)
+        {
+            message += $"\nConsultation Fee: ₹{appointment.ConsultationFee:N2}\n";
+        }
+
+        message += $"\nThank you,\nMMGC Hospital";
+
+        return message;
     }
 
     public async Task<bool> SendWhatsAppNotificationAsync(int appointmentId)

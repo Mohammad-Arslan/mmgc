@@ -330,8 +330,33 @@ public class AppointmentsController : Controller
     [HttpPost]
     public async Task<IActionResult> SendSMS(int id)
     {
-        var result = await _appointmentService.SendSMSNotificationAsync(id);
-        return Json(new { success = result });
+        try
+        {
+            var result = await _appointmentService.SendSMSNotificationAsync(id);
+            
+            if (result)
+            {
+                return Json(new { 
+                    success = true, 
+                    message = "SMS sent successfully! Note: If using a Twilio trial account, SMS will only be delivered to verified phone numbers." 
+                });
+            }
+            else
+            {
+                return Json(new { 
+                    success = false, 
+                    message = "Failed to send SMS. Please check the logs for details. If using a Twilio trial account, ensure the phone number is verified in your Twilio console." 
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in SendSMS action for appointment {AppointmentId}", id);
+            return Json(new { 
+                success = false, 
+                message = $"An error occurred: {ex.Message}" 
+            });
+        }
     }
 
     // POST: Appointments/SendWhatsApp/5

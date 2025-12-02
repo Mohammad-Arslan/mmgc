@@ -106,9 +106,6 @@
                                         <button onclick="sendSMS(@item.Id)" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Send SMS">
                                             <i class="bi bi-chat-text"></i>
                                         </button>
-                                        <button onclick="sendWhatsApp(@item.Id)" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Send WhatsApp">
-                                            <i class="bi bi-whatsapp"></i>
-                                        </button>
                                         <button type="button" class="btn btn-sm btn-danger delete-appointment" data-appointment-id="@item.Id" data-patient-name="@item.Patient?.FullName" data-appointment-date="@item.AppointmentDate.ToString("dd MMM yyyy hh:mm tt")" data-bs-toggle="tooltip" title="Delete">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -147,37 +144,59 @@
         });
 
         function sendSMS(id) {
-            if (!confirm('Send SMS notification for this appointment?')) return;
-            
-            fetch(`/Appointments/SendSMS/${id}`, { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('SMS sent successfully!');
-                    } else {
-                        alert('Failed to send SMS');
-                    }
-                })
-                .catch(error => {
-                    alert('Error sending SMS: ' + error);
-                });
-        }
+            Swal.fire({
+                title: 'Send SMS Notification?',
+                text: 'Are you sure you want to send an SMS notification for this appointment?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-send"></i> Yes, send SMS',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Sending SMS...',
+                        text: 'Please wait while we send the SMS notification.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
 
-        function sendWhatsApp(id) {
-            if (!confirm('Send WhatsApp notification for this appointment?')) return;
-            
-            fetch(`/Appointments/SendWhatsApp/${id}`, { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('WhatsApp message sent successfully!');
-                    } else {
-                        alert('Failed to send WhatsApp message');
-                    }
-                })
-                .catch(error => {
-                    alert('Error sending WhatsApp: ' + error);
-                });
+                    fetch(`/Appointments/SendSMS/${id}`, { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    title: 'SMS Sent!',
+                                    html: data.message || 'SMS sent successfully!<br><br><small>Note: If using a Twilio trial account, SMS will only be delivered to verified phone numbers.</small>',
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'SMS Failed',
+                                    html: data.message || 'Failed to send SMS. Please check the logs for details.',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error sending SMS: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        });
+                }
+            });
         }
 
         // SweetAlert Delete Confirmation

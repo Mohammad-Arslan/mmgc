@@ -19,6 +19,13 @@ obj/
 .env
 *.log
 
+## Configuration files with secrets
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.json
+!appsettings.json
+!appsettings.example.json
+
 ## OS
 .DS_Store
 Thumbs.db
