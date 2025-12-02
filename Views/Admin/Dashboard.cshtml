@@ -84,7 +84,7 @@
             <div class="card-body">
                 <div class="row align-items-center mb-4">
                     <div class="col-md-6">
-                        <h2 class="text-gradient fw-bold mb-0">₹@ViewBag.TotalRevenue.ToString("N2")</h2>
+                        <h2 class="text-gradient fw-bold mb-0">PKR @ViewBag.TotalRevenue.ToString("N2")</h2>
                         <p class="text-muted mb-0">Total Revenue for @DateTime.Now.Year</p>
                     </div>
                     <div class="col-md-6 text-md-end">
@@ -109,11 +109,11 @@
                                     <div class="mb-2" style="height: 120px; display: flex; align-items: flex-end;">
                                         <div style="width: 100%; height: @(height)%; background: linear-gradient(to top, #667eea, #764ba2); border-radius: 8px 8px 0 0; transition: all 0.3s ease;"
                                              data-bs-toggle="tooltip" 
-                                             title="₹@month.Value.ToString("N2")">
+                                             title="PKR @month.Value.ToString("N2")">
                                         </div>
                                     </div>
                                     <small class="text-muted d-block fw-semibold">@month.Key</small>
-                                    <strong class="text-gradient">₹@month.Value.ToString("N0")</strong>
+                                    <strong class="text-gradient">PKR @month.Value.ToString("N0")</strong>
                                 </div>
                             </div>
                         }

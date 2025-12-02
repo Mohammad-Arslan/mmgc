@@ -67,7 +67,7 @@ $(document).ready(function () {
     $('.currency').each(function () {
         var value = parseFloat($(this).text());
         if (!isNaN(value)) {
-            $(this).text('₹' + value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $(this).text('PKR ' + value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         }
     });
 

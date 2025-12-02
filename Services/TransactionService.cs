@@ -233,7 +233,7 @@ public class TransactionService : ITransactionService
             <div class=""info-row"">
                 <span class=""info-label"">Total Amount:</span>
             </div>
-            <div class=""total-amount"">₹{transaction.Amount:N2}</div>
+            <div class=""total-amount"">PKR {transaction.Amount:N2}</div>
         </div>
 
         <div class=""footer"">

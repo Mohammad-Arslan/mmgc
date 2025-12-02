@@ -151,7 +151,7 @@ public class AppointmentService : IAppointmentService
         
         if (appointment.ConsultationFee > 0)
         {
-            message += $". Fee: ₹{appointment.ConsultationFee:N0}";
+            message += $". Fee: PKR {appointment.ConsultationFee:N0}";
         }
         
         message += ". -MMGC";

@@ -57,7 +57,7 @@
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <p class="text-muted mb-2 fw-semibold">Total Amount</p>
-                    <h3 class="mb-0 fw-bold text-success">₹@totalAmount.ToString("N2")</h3>
+                    <h3 class="mb-0 fw-bold text-success">PKR @totalAmount.ToString("N2")</h3>
                 </div>
                 <div class="dashboard-icon icon-success">
                     <i class="bi bi-cash-stack"></i>
@@ -127,7 +127,7 @@
                                 </td>
                                 <td>@item.Description</td>
                                 <td><span class="badge bg-secondary">@item.TransactionType</span></td>
-                                <td><strong class="text-success">₹@item.Amount.ToString("N2")</strong></td>
+                                <td><strong class="text-success">PKR @item.Amount.ToString("N2")</strong></td>
                                 <td>
                                     @{
                                         var paymentIcon = item.PaymentMode switch
@@ -282,7 +282,7 @@
 
             Swal.fire({
                 title: 'Are you sure?',
-                html: `You are about to delete a transaction of <strong>₹${amount}</strong><br>for patient <strong>${patientName}</strong>.<br><br>This action cannot be undone!`,
+                html: `You are about to delete a transaction of <strong>PKR ${amount}</strong><br>for patient <strong>${patientName}</strong>.<br><br>This action cannot be undone!`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
