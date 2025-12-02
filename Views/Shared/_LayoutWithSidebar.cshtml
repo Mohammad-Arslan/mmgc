@@ -94,6 +94,18 @@
                         <span>Transactions</span>
                     </a>
                 </li>
+                
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="#usersSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="bi bi-people-fill"></i>
+                        <span>Users & Admin</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul class="collapse sidebar-submenu" id="usersSubmenu">
+                        <li><a asp-controller="Users" asp-action="Index">All Users</a></li>
+                        <li><a asp-controller="Users" asp-action="Create">Create User</a></li>
+                    </ul>
+                </li>
             </ul>
         </nav>
 
