@@ -84,6 +84,56 @@ public class TransactionService : ITransactionService
         var filePath = Path.Combine(invoicesFolder, fileName);
         var relativePath = $"/invoices/{fileName}";
 
+        // Get related records for itemized charges
+        var appointment = transaction.Appointment;
+        var procedure = transaction.Procedure;
+        var labTest = transaction.LabTest;
+        
+        var charges = new List<(string Description, decimal Amount)>();
+        
+        if (appointment != null)
+        {
+            charges.Add(($"Appointment #{appointment.Id} - {appointment.AppointmentDate:dd MMM yyyy} - Dr. {appointment.Doctor?.FullName ?? "N/A"}", appointment.ConsultationFee));
+        }
+        
+        if (procedure != null)
+        {
+            charges.Add(($"Procedure: {procedure.ProcedureName}", procedure.ProcedureFee));
+        }
+        
+        if (labTest != null)
+        {
+            charges.Add(($"Lab Test: {labTest.TestName}", labTest.TestFee));
+        }
+        
+        // If no specific charges, use description
+        if (charges.Count == 0 && !string.IsNullOrEmpty(transaction.Description))
+        {
+            charges.Add((transaction.Description, transaction.Amount));
+        }
+        
+        // Build itemized charges HTML
+        var chargesHtml = "";
+        if (charges.Count > 0)
+        {
+            foreach (var charge in charges)
+            {
+                chargesHtml += $@"
+                <div class=""charge-row"">
+                    <div class=""charge-description"">{charge.Description}</div>
+                    <div class=""charge-amount"">PKR {charge.Amount:N2}</div>
+                </div>";
+            }
+        }
+        else
+        {
+            chargesHtml = $@"
+                <div class=""charge-row"">
+                    <div class=""charge-description"">{transaction.Description}</div>
+                    <div class=""charge-amount"">PKR {transaction.Amount:N2}</div>
+                </div>";
+        }
+
         // Create HTML invoice that can be opened in browser and printed as PDF
         var invoiceContent = $@"<!DOCTYPE html>
 <html lang=""en"">
@@ -113,15 +163,64 @@ public class TransactionService : ITransactionService
             border-bottom: 3px solid #667eea;
             padding-bottom: 20px;
             margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }}
-        .header h1 {{
+        .hospital-info {{
+            flex: 1;
+        }}
+        .hospital-name {{
             color: #667eea;
-            font-size: 32px;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }}
+        .hospital-details {{
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }}
+        .hospital-details p {{
+            margin: 4px 0;
+        }}
+        .invoice-info {{
+            text-align: right;
+        }}
+        .invoice-info h2 {{
+            color: #667eea;
+            font-size: 24px;
             margin-bottom: 10px;
         }}
         .invoice-number {{
             color: #666;
             font-size: 14px;
+        }}
+        .invoice-date {{
+            color: #666;
+            font-size: 14px;
+        }}
+        .charges-table {{
+            margin-top: 15px;
+        }}
+        .charge-row {{
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fafafa;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }}
+        .charge-description {{
+            flex: 1;
+            color: #333;
+            font-weight: 500;
+        }}
+        .charge-amount {{
+            color: #28a745;
+            font-weight: bold;
+            min-width: 120px;
+            text-align: right;
         }}
         .section {{
             margin-bottom: 30px;
@@ -133,6 +232,53 @@ public class TransactionService : ITransactionService
             margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 2px solid #eee;
+        }}
+        .hospital-info {{
+            flex: 1;
+        }}
+        .hospital-name {{
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }}
+        .hospital-details {{
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }}
+        .hospital-details p {{
+            margin: 4px 0;
+        }}
+        .invoice-info {{
+            text-align: right;
+        }}
+        .invoice-info h2 {{
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }}
+        .charges-table {{
+            margin-top: 15px;
+        }}
+        .charge-row {{
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fafafa;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }}
+        .charge-description {{
+            flex: 1;
+            color: #333;
+            font-weight: 500;
+        }}
+        .charge-amount {{
+            color: #28a745;
+            font-weight: bold;
+            min-width: 120px;
+            text-align: right;
         }}
         .info-row {{
             display: flex;
@@ -184,9 +330,19 @@ public class TransactionService : ITransactionService
 <body>
     <div class=""invoice-container"">
         <div class=""header"">
-            <h1>INVOICE</h1>
-            <div class=""invoice-number"">Invoice Number: INV-{transactionId:00000}</div>
-            <div class=""invoice-number"">Date: {DateTime.Now:dd MMM yyyy HH:mm}</div>
+            <div class=""hospital-info"">
+                <h1 class=""hospital-name"">MMGC Hospital</h1>
+                <div class=""hospital-details"">
+                    <p>123 Medical Center Road, Healthcare District</p>
+                    <p>Karachi, Pakistan</p>
+                    <p>Phone: +92-300-1234567 | Email: info@mmgc.com</p>
+                </div>
+            </div>
+            <div class=""invoice-info"">
+                <h2>INVOICE</h2>
+                <div class=""invoice-number"">Invoice #: INV-{transactionId:00000}</div>
+                <div class=""invoice-date"">Date: {DateTime.Now:dd MMM yyyy HH:mm}</div>
+            </div>
         </div>
 
         <div class=""section"">
@@ -202,11 +358,14 @@ public class TransactionService : ITransactionService
         </div>
 
         <div class=""section"">
-            <div class=""section-title"">Transaction Details</div>
-            <div class=""info-row"">
-                <span class=""info-label"">Description:</span>
-                <span class=""info-value"">{transaction.Description}</span>
+            <div class=""section-title"">Charges Breakdown</div>
+            <div class=""charges-table"">
+                {chargesHtml}
             </div>
+        </div>
+
+        <div class=""section"">
+            <div class=""section-title"">Payment Information</div>
             <div class=""info-row"">
                 <span class=""info-label"">Transaction Type:</span>
                 <span class=""info-value"">{transaction.TransactionType}</span>
