@@ -18,6 +18,25 @@
     </div>
 </div>
 
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@Html.AntiForgeryToken()
+
 <!-- Summary Cards -->
 <div class="row mb-4">
     <div class="col-md-4">
@@ -146,18 +165,24 @@
                                         <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="View Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
                                         @if (!item.InvoiceGenerated)
                                         {
                                             <button onclick="generateInvoice(@item.Id)" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Generate Invoice">
                                                 <i class="bi bi-file-earmark-pdf"></i>
                                             </button>
                                         }
-                                        else
+                                        else if (!string.IsNullOrEmpty(item.InvoicePath))
                                         {
-                                            <a href="@item.InvoicePath" target="_blank" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="Download Invoice">
+                                            <a asp-action="DownloadInvoice" asp-route-id="@item.Id" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="Download Invoice">
                                                 <i class="bi bi-download"></i>
                                             </a>
                                         }
+                                        <button type="button" class="btn btn-sm btn-danger delete-transaction" data-transaction-id="@item.Id" data-amount="@item.Amount.ToString("N2")" data-patient-name="@item.Patient?.FullName" data-bs-toggle="tooltip" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -180,23 +205,126 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function generateInvoice(id) {
-            if (!confirm('Generate invoice for this transaction?')) return;
-            
-            fetch(`/Transactions/GenerateInvoice/${id}`, { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Invoice generated successfully!');
-                        location.reload();
-                    } else {
-                        alert('Failed to generate invoice: ' + (data.message || 'Unknown error'));
-                    }
-                })
-                .catch(error => {
-                    alert('Error generating invoice: ' + error);
+        // Search functionality
+        $(document).ready(function() {
+            $('#tableSearch').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $('table tbody tr').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
                 });
+            });
+        });
+
+        function generateInvoice(id) {
+            Swal.fire({
+                title: 'Generate Invoice?',
+                text: 'Are you sure you want to generate an invoice for this transaction?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-file-earmark-pdf"></i> Yes, generate',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Generating...',
+                        text: 'Please wait while we generate the invoice.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch(`/Transactions/GenerateInvoice/${id}`, { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    title: 'Invoice Generated!',
+                                    text: 'Invoice has been generated successfully.',
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Failed',
+                                    text: 'Failed to generate invoice: ' + (data.message || 'Unknown error'),
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error generating invoice: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        });
+                }
+            });
         }
+
+        // SweetAlert Delete Confirmation
+        $('.delete-transaction').on('click', function() {
+            const transactionId = $(this).data('transaction-id');
+            const amount = $(this).data('amount');
+            const patientName = $(this).data('patient-name') || 'Unknown';
+            const deleteUrl = '@Url.Action("Delete", "Transactions")';
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            Swal.fire({
+                title: 'Are you sure?',
+                html: `You are about to delete a transaction of <strong>₹${amount}</strong><br>for patient <strong>${patientName}</strong>.<br><br>This action cannot be undone!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: '<i class="bi bi-trash"></i> Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const formData = new FormData();
+                    formData.append('id', transactionId);
+                    formData.append('__RequestVerificationToken', token);
+                    
+                    fetch(deleteUrl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        }
+                        throw new Error('Network response was not ok');
+                    })
+                    .then(() => {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Transaction has been deleted.',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to delete transaction: ' + error.message,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+                }
+            });
+        });
     </script>
 }

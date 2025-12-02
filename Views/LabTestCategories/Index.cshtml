@@ -1,6 +1,6 @@
-@model IEnumerable<MMGC.Models.LabTest>
+@model IEnumerable<MMGC.Models.LabTestCategory>
 @{
-    ViewData["Title"] = "Lab Tests";
+    ViewData["Title"] = "Lab Test Categories";
     Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
 }
 
@@ -8,11 +8,11 @@
 <div class="page-header">
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <h2><i class="bi bi-flask"></i> Lab Tests</h2>
-            <p>Manage laboratory tests and reports</p>
+            <h2><i class="bi bi-tags"></i> Lab Test Categories</h2>
+            <p>Manage laboratory test categories</p>
         </div>
         <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> New Lab Test
+            <i class="bi bi-plus-circle"></i> New Category
         </a>
     </div>
 </div>
@@ -43,17 +43,17 @@
             <div class="col-md-6">
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" id="tableSearch" class="form-control" placeholder="Search lab tests...">
+                    <input type="text" id="tableSearch" class="form-control" placeholder="Search categories...">
                 </div>
             </div>
             <div class="col-md-6 text-end">
-                <span class="badge bg-warning fs-6">Total: @Model.Count() Tests</span>
+                <span class="badge bg-primary fs-6">Total: @Model.Count() Categories</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Lab Tests Table -->
+<!-- Categories Table -->
 <div class="card">
     <div class="card-body">
         @if (Model.Any())
@@ -62,11 +62,10 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th><i class="bi bi-person"></i> Patient</th>
-                            <th><i class="bi bi-flask"></i> Test Name</th>
-                            <th><i class="bi bi-tag"></i> Category</th>
-                            <th><i class="bi bi-calendar"></i> Date</th>
+                            <th><i class="bi bi-tag"></i> Category Name</th>
+                            <th><i class="bi bi-file-text"></i> Description</th>
                             <th><i class="bi bi-info-circle"></i> Status</th>
+                            <th><i class="bi bi-calendar"></i> Created Date</th>
                             <th><i class="bi bi-gear"></i> Actions</th>
                         </tr>
                     </thead>
@@ -74,57 +73,32 @@
                         @foreach (var item in Model)
                         {
                             <tr>
+                                <td><strong>@item.CategoryName</strong></td>
+                                <td>@(item.Description ?? "No description")</td>
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-circle bg-warning text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                            @(item.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
-                                        </div>
-                                        <strong>@item.Patient?.FullName</strong>
-                                    </div>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle"></i> Inactive
+                                        </span>
+                                    }
                                 </td>
-                                <td><strong>@item.TestName</strong></td>
-                                <td><span class="badge bg-secondary">@item.LabTestCategory?.CategoryName</span></td>
                                 <td>
                                     <i class="bi bi-calendar-event text-primary"></i> 
-                                    @item.TestDate.ToString("dd MMM yyyy")
-                                </td>
-                                <td>
-                                    @{
-                                        var statusClass = item.Status switch
-                                        {
-                                            "Pending" => "bg-secondary",
-                                            "Sample Collected" => "bg-info",
-                                            "In Progress" => "bg-warning",
-                                            "Completed" => "bg-success",
-                                            "Cancelled" => "bg-danger",
-                                            _ => "bg-secondary"
-                                        };
-                                    }
-                                    <span class="badge @statusClass">
-                                        <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> @item.Status
-                                    </span>
+                                    @item.CreatedDate.ToString("dd MMM yyyy")
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="View Details">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
                                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        @if (item.Status != "Completed")
-                                        {
-                                            <a asp-action="UploadReport" asp-route-id="@item.Id" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Upload Report">
-                                                <i class="bi bi-upload"></i>
-                                            </a>
-                                        }
-                                        else if (!string.IsNullOrEmpty(item.ReportFilePath))
-                                        {
-                                            <a href="@item.ReportFilePath" target="_blank" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="View Report">
-                                                <i class="bi bi-file-earmark-text"></i>
-                                            </a>
-                                        }
-                                        <button type="button" class="btn btn-sm btn-danger delete-labtest" data-labtest-id="@item.Id" data-test-name="@item.TestName" data-patient-name="@item.Patient?.FullName" data-bs-toggle="tooltip" title="Delete">
+                                        <button type="button" class="btn btn-sm btn-danger delete-category" data-category-id="@item.Id" data-category-name="@item.CategoryName" data-bs-toggle="tooltip" title="Delete">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -138,10 +112,10 @@
         else
         {
             <div class="text-center py-5">
-                <i class="bi bi-flask" style="font-size: 4rem; color: #e0e0e0;"></i>
-                <p class="text-muted mt-3 mb-0">No lab tests recorded yet.</p>
+                <i class="bi bi-tags" style="font-size: 4rem; color: #e0e0e0;"></i>
+                <p class="text-muted mt-3 mb-0">No lab test categories found.</p>
                 <a asp-action="Create" class="btn btn-primary mt-3">
-                    <i class="bi bi-plus-circle"></i> Create First Lab Test
+                    <i class="bi bi-plus-circle"></i> Create First Category
                 </a>
             </div>
         }
@@ -162,16 +136,15 @@
         });
 
         // SweetAlert Delete Confirmation
-        $('.delete-labtest').on('click', function() {
-            const labTestId = $(this).data('labtest-id');
-            const testName = $(this).data('test-name');
-            const patientName = $(this).data('patient-name') || 'Unknown';
-            const deleteUrl = '@Url.Action("Delete", "LabTests")';
+        $('.delete-category').on('click', function() {
+            const categoryId = $(this).data('category-id');
+            const categoryName = $(this).data('category-name');
+            const deleteUrl = '@Url.Action("Delete", "LabTestCategories")';
             const token = $('input[name="__RequestVerificationToken"]').val();
 
             Swal.fire({
                 title: 'Are you sure?',
-                html: `You are about to delete the lab test <strong>${testName}</strong><br>for patient <strong>${patientName}</strong>.<br><br>This action cannot be undone!`,
+                html: `You are about to delete the category <strong>${categoryName}</strong>.<br><br>This action cannot be undone!`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -181,7 +154,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     const formData = new FormData();
-                    formData.append('id', labTestId);
+                    formData.append('id', categoryId);
                     formData.append('__RequestVerificationToken', token);
                     
                     fetch(deleteUrl, {
@@ -197,7 +170,7 @@
                     .then(() => {
                         Swal.fire({
                             title: 'Deleted!',
-                            text: 'Lab test has been deleted.',
+                            text: 'Category has been deleted.',
                             icon: 'success',
                             confirmButtonText: 'OK'
                         }).then(() => {
@@ -207,7 +180,7 @@
                     .catch(error => {
                         Swal.fire({
                             title: 'Error!',
-                            text: 'Failed to delete lab test: ' + error.message,
+                            text: 'Failed to delete category: ' + error.message,
                             icon: 'error',
                             confirmButtonText: 'OK'
                         });
@@ -217,3 +190,4 @@
         });
     </script>
 }
+

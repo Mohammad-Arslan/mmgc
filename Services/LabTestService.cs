@@ -51,13 +51,18 @@ public class LabTestService : ILabTestService
     public async Task<LabTest> CreateLabTestAsync(LabTest labTest)
     {
         labTest.CreatedDate = DateTime.Now;
-        return await _repository.AddAsync(labTest);
+        // Use context directly to avoid navigation property issues
+        await _context.LabTests.AddAsync(labTest);
+        await _context.SaveChangesAsync();
+        return labTest;
     }
 
     public async Task UpdateLabTestAsync(LabTest labTest)
     {
         labTest.UpdatedDate = DateTime.Now;
-        await _repository.UpdateAsync(labTest);
+        // Use context directly to avoid navigation property issues
+        _context.LabTests.Update(labTest);
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteLabTestAsync(int id)
@@ -78,7 +83,9 @@ public class LabTestService : ILabTestService
             labTest.ReportNotes = notes;
             labTest.Status = "Completed";
             labTest.UpdatedDate = DateTime.Now;
-            await _repository.UpdateAsync(labTest);
+            // Use context directly
+            _context.LabTests.Update(labTest);
+            await _context.SaveChangesAsync();
         }
     }
 }
