@@ -17,6 +17,15 @@
     </div>
 </div>
 
+<!-- Success Message -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <!-- Search and Filter -->
 <div class="card mb-4">
     <div class="card-body">
@@ -33,6 +42,8 @@
         </div>
     </div>
 </div>
+
+@Html.AntiForgeryToken()
 
 <!-- Appointments Table -->
 <div class="card">
@@ -98,6 +109,9 @@
                                         <button onclick="sendWhatsApp(@item.Id)" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Send WhatsApp">
                                             <i class="bi bi-whatsapp"></i>
                                         </button>
+                                        <button type="button" class="btn btn-sm btn-danger delete-appointment" data-appointment-id="@item.Id" data-patient-name="@item.Patient?.FullName" data-appointment-date="@item.AppointmentDate.ToString("dd MMM yyyy hh:mm tt")" data-bs-toggle="tooltip" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -120,7 +134,18 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // Search functionality
+        $(document).ready(function() {
+            $('#tableSearch').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $('table tbody tr').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+        });
+
         function sendSMS(id) {
             if (!confirm('Send SMS notification for this appointment?')) return;
             
@@ -154,5 +179,60 @@
                     alert('Error sending WhatsApp: ' + error);
                 });
         }
+
+        // SweetAlert Delete Confirmation
+        $('.delete-appointment').on('click', function() {
+            const appointmentId = $(this).data('appointment-id');
+            const patientName = $(this).data('patient-name') || 'Unknown';
+            const appointmentDate = $(this).data('appointment-date') || 'Unknown';
+            const deleteUrl = '@Url.Action("Delete", "Appointments")';
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            Swal.fire({
+                title: 'Are you sure?',
+                html: `You are about to delete the appointment for <strong>${patientName}</strong><br>scheduled on <strong>${appointmentDate}</strong>.<br><br>This action cannot be undone!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: '<i class="bi bi-trash"></i> Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const formData = new FormData();
+                    formData.append('id', appointmentId);
+                    formData.append('__RequestVerificationToken', token);
+                    
+                    fetch(deleteUrl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        }
+                        throw new Error('Network response was not ok');
+                    })
+                    .then(() => {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Appointment has been deleted.',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to delete appointment: ' + error.message,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+                }
+            });
+        });
     </script>
 }

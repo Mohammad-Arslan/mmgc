@@ -54,13 +54,19 @@ public class AppointmentService : IAppointmentService
     public async Task<Appointment> CreateAppointmentAsync(Appointment appointment)
     {
         appointment.CreatedDate = DateTime.Now;
-        return await _repository.AddAsync(appointment);
+        
+        // Use context directly to avoid navigation property issues
+        await _context.Appointments.AddAsync(appointment);
+        await _context.SaveChangesAsync();
+        return appointment;
     }
 
     public async Task UpdateAppointmentAsync(Appointment appointment)
     {
         appointment.UpdatedDate = DateTime.Now;
-        await _repository.UpdateAsync(appointment);
+        // Use context directly to avoid navigation property issues
+        _context.Appointments.Update(appointment);
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteAppointmentAsync(int id)

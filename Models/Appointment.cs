@@ -8,9 +8,11 @@ public class Appointment
     [Key]
     public int Id { get; set; }
 
-    [Required]
+    // Make nullable to allow empty option from the select to bind to null.
+    // Use Range validation to ensure a valid patient is selected (null or 0 will fail).
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a patient.")]
     [Display(Name = "Patient")]
-    public int PatientId { get; set; }
+    public int? PatientId { get; set; }
 
     [Display(Name = "Doctor")]
     public int? DoctorId { get; set; }
@@ -61,7 +63,7 @@ public class Appointment
 
     // Navigation properties
     [ForeignKey("PatientId")]
-    public virtual Patient Patient { get; set; } = null!;
+    public virtual Patient? Patient { get; set; }
 
     [ForeignKey("DoctorId")]
     public virtual Doctor? Doctor { get; set; }
