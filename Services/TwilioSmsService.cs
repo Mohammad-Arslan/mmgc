@@ -29,6 +29,10 @@ public class TwilioSmsService : ISmsService
         
         _logger = logger;
 
+        // Log configuration (without exposing full credentials)
+        _logger.LogInformation("Twilio SMS Service initialized. AccountSid: {AccountSidPrefix}..., FromNumber: {FromNumber}", 
+            _accountSid.Substring(0, Math.Min(8, _accountSid.Length)), _fromPhoneNumber);
+
         // Initialize Twilio client
         TwilioClient.Init(_accountSid, _authToken);
     }
@@ -37,22 +41,33 @@ public class TwilioSmsService : ISmsService
     {
         try
         {
+            // Ensure Twilio client is initialized (reinitialize to be safe)
+            TwilioClient.Init(_accountSid, _authToken);
+
             // Format phone number to E.164 format if needed
             var formattedPhoneNumber = FormatPhoneNumber(toPhoneNumber);
+            
+            _logger.LogDebug("Sending SMS. From: {From}, To: {To}, MessageLength: {Length}, MessagePreview: {Preview}", 
+                _fromPhoneNumber, formattedPhoneNumber, message?.Length ?? 0, 
+                message?.Length > 50 ? message.Substring(0, 50) + "..." : message);
 
+            // Match the working example exactly - use synchronous Create
             var messageOptions = new CreateMessageOptions(
-                new PhoneNumber(formattedPhoneNumber))
-            {
-                From = new PhoneNumber(_fromPhoneNumber),
-                Body = message
-            };
+                new PhoneNumber(formattedPhoneNumber));
+            messageOptions.From = new PhoneNumber(_fromPhoneNumber);
+            messageOptions.Body = message;
 
-            var messageResource = await MessageResource.CreateAsync(messageOptions);
+            // Use synchronous Create (like the working example)
+            var messageResource = await Task.Run(() => MessageResource.Create(messageOptions));
             
             // Log detailed information
-            _logger.LogInformation("SMS sent. SID: {MessageSid}, To: {To}, Status: {Status}, ErrorCode: {ErrorCode}, ErrorMessage: {ErrorMessage}", 
+            _logger.LogInformation("SMS Response. SID: {MessageSid}, To: {To}, Status: {Status}, ErrorCode: {ErrorCode}, ErrorMessage: {ErrorMessage}, Price: {Price}, PriceUnit: {PriceUnit}, Uri: {Uri}", 
                 messageResource.Sid, formattedPhoneNumber, messageResource.Status, 
-                messageResource.ErrorCode, messageResource.ErrorMessage);
+                messageResource.ErrorCode, messageResource.ErrorMessage, messageResource.Price, messageResource.PriceUnit, messageResource.Uri);
+            
+            // Log the actual message body being sent (first 100 chars)
+            _logger.LogDebug("Message body sent: {MessageBody}", 
+                message?.Length > 100 ? message.Substring(0, 100) + "..." : message);
 
             // Check for errors
             if (messageResource.ErrorCode.HasValue && messageResource.ErrorCode.Value != 0)

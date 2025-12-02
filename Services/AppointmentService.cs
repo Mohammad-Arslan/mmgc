@@ -1,3 +1,4 @@
+using System.Linq;
 using MMGC.Models;
 using MMGC.Repositories;
 using MMGC.Data;
@@ -135,29 +136,32 @@ public class AppointmentService : IAppointmentService
     private string BuildAppointmentSmsMessage(Appointment appointment)
     {
         var patientName = appointment.Patient?.FullName ?? "Patient";
-        var appointmentDate = appointment.AppointmentDate.ToString("dd MMM yyyy hh:mm tt");
-        var doctorName = appointment.Doctor?.FullName ?? "Not Assigned";
-        var appointmentType = appointment.AppointmentType;
-        var status = appointment.Status;
+        var appointmentDate = appointment.AppointmentDate.ToString("dd MMM yyyy, hh:mm tt");
+        var doctorName = appointment.Doctor?.FullName ?? "TBA";
 
-        var message = $"Hello {patientName},\n\n";
-        message += $"Your appointment is scheduled:\n";
-        message += $"Date & Time: {appointmentDate}\n";
-        message += $"Type: {appointmentType}\n";
-        message += $"Doctor: {doctorName}\n";
-        message += $"Status: {status}\n";
-
-        if (!string.IsNullOrWhiteSpace(appointment.Reason))
+        // Keep message short for Twilio trial account (max 160 chars recommended)
+        var message = $"Hi {patientName.Split(' ')[0]}, your appointment is on {appointmentDate}";
+        
+        if (appointment.Doctor != null)
         {
-            message += $"\nReason: {appointment.Reason}\n";
+            message += $" with Dr. {doctorName.Split(' ').Last()}";
         }
-
+        
+        message += ". Status: " + appointment.Status;
+        
         if (appointment.ConsultationFee > 0)
         {
-            message += $"\nConsultation Fee: ₹{appointment.ConsultationFee:N2}\n";
+            message += $". Fee: ₹{appointment.ConsultationFee:N0}";
         }
+        
+        message += ". -MMGC";
 
-        message += $"\nThank you,\nMMGC Hospital";
+        // Ensure message doesn't exceed 160 characters (SMS limit)
+        if (message.Length > 160)
+        {
+            // Truncate and add ellipsis
+            message = message.Substring(0, 157) + "...";
+        }
 
         return message;
     }
