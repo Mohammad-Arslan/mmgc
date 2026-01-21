@@ -48,6 +48,16 @@ public class LabTest
     [Display(Name = "Report Notes")]
     public string? ReportNotes { get; set; }
 
+    [Display(Name = "Is Approved")]
+    public bool IsApproved { get; set; } = false;
+
+    [Display(Name = "Approved By Doctor")]
+    public int? ApprovedByDoctorId { get; set; }
+
+    [Display(Name = "Approved Date")]
+    [DataType(DataType.DateTime)]
+    public DateTime? ApprovedDate { get; set; }
+
     [Display(Name = "Created Date")]
     public DateTime CreatedDate { get; set; } = DateTime.Now;
 
@@ -67,4 +77,7 @@ public class LabTest
 
     [ForeignKey("ProcedureId")]
     public virtual Procedure? Procedure { get; set; }
+
+    [ForeignKey("ApprovedByDoctorId")]
+    public virtual Doctor? ApprovedByDoctor { get; set; }
 }

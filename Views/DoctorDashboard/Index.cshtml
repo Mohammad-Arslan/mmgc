@@ -1,0 +1,196 @@
+@model MMGC.Models.Doctor
+@{
+    ViewData["Title"] = "Doctor Dashboard";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var stats = ViewBag.Statistics as Dictionary<string, object>;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-speedometer2"></i> Doctor Dashboard</h2>
+            <p>Welcome, Dr. @Model.FullName</p>
+        </div>
+        <div>
+            <a asp-action="Profile" class="btn btn-primary">
+                <i class="bi bi-person-circle"></i> Manage Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> @ViewBag.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Overview Cards -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Today's Appointments</p>
+                    <h2 class="mb-0 fw-bold">@(stats?["TodayAppointments"] ?? 0)</h2>
+                    <small class="text-info"><i class="bi bi-calendar-day"></i> Scheduled</small>
+                </div>
+                <div class="dashboard-icon icon-primary">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">This Month</p>
+                    <h2 class="mb-0 fw-bold">@(stats?["ThisMonthAppointments"] ?? 0)</h2>
+                    <small class="text-success"><i class="bi bi-calendar-month"></i> Appointments</small>
+                </div>
+                <div class="dashboard-icon icon-success">
+                    <i class="bi bi-calendar3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Total Patients</p>
+                    <h2 class="mb-0 fw-bold">@(stats?["TotalPatients"] ?? 0)</h2>
+                    <small class="text-info"><i class="bi bi-people"></i> Under Care</small>
+                </div>
+                <div class="dashboard-icon icon-info">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Monthly Revenue</p>
+                    <h2 class="mb-0 fw-bold">₹@(stats?["MonthlyRevenue"] ?? 0)</h2>
+                    <small class="text-success"><i class="bi bi-currency-rupee"></i> This Month</small>
+                </div>
+                <div class="dashboard-icon icon-warning">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="AppointmentsHistory" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-clock-history"></i><br>
+                            Appointments History
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="Patients" class="btn btn-outline-success w-100">
+                            <i class="bi bi-people"></i><br>
+                            My Patients
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="Procedures" asp-action="Create" class="btn btn-outline-info w-100">
+                            <i class="bi bi-clipboard-pulse"></i><br>
+                            New Procedure
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="Profile" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-person-gear"></i><br>
+                            Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Appointments -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Recent Appointments</h5>
+                <a asp-action="AppointmentsHistory" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Patient</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var recentAppointments = ViewBag.RecentAppointments as IEnumerable<MMGC.Models.Appointment>;
+                                if (recentAppointments != null && recentAppointments.Any())
+                                {
+                                    foreach (var appointment in recentAppointments.Take(5))
+                                    {
+                                        <tr>
+                                            <td>@appointment.AppointmentDate.ToString("dd MMM yyyy HH:mm")</td>
+                                            <td>@(appointment.Patient?.FullName ?? "N/A")</td>
+                                            <td><span class="badge bg-info">@appointment.AppointmentType</span></td>
+                                            <td><span class="badge bg-@(appointment.Status == "Completed" ? "success" : appointment.Status == "Cancelled" ? "danger" : "warning")">@appointment.Status</span></td>
+                                            <td>
+                                                <a asp-controller="Appointments" asp-action="Details" asp-route-id="@appointment.Id" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">No recent appointments</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh dashboard every 5 minutes
+        setTimeout(function() {
+            location.reload();
+        }, 300000);
+    </script>
+}
+

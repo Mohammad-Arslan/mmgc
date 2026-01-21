@@ -57,6 +57,10 @@ public class Doctor
     [Display(Name = "Updated Date")]
     public DateTime? UpdatedDate { get; set; }
 
+    [StringLength(450)]
+    [Display(Name = "User ID")]
+    public string? UserId { get; set; } // Link to ApplicationUser
+
     // Navigation properties
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
     public virtual ICollection<Procedure> Procedures { get; set; } = new List<Procedure>();

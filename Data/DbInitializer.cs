@@ -12,7 +12,7 @@ public static class DbInitializer
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
         // Create roles
-        string[] roles = { "Admin", "Doctor", "Nurse", "LabStaff", "Patient" };
+        string[] roles = { "Admin", "Doctor", "Nurse", "LabStaff", "ReceptionStaff", "AccountsStaff", "Patient" };
 
         foreach (var roleName in roles)
         {

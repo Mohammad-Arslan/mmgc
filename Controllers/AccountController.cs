@@ -29,7 +29,12 @@ namespace MMGC.Controllers
         {
             if (User.Identity?.IsAuthenticated == true)
             {
-                return RedirectToAction("Dashboard", "Admin");
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    return RedirectToRoleBasedDashboard(roles);
+                }
             }
 
             // Clear the existing external cookie to ensure a clean login process
@@ -57,6 +62,18 @@ namespace MMGC.Controllers
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+                    
+                    // If returnUrl is not specified or is the default, redirect based on role
+                    if (string.IsNullOrEmpty(returnUrl) || returnUrl == "/" || returnUrl == "~/")
+                    {
+                        var user = await _userManager.FindByEmailAsync(model.Email);
+                        if (user != null)
+                        {
+                            var roles = await _userManager.GetRolesAsync(user);
+                            return RedirectToRoleBasedDashboard(roles);
+                        }
+                    }
+                    
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
@@ -204,6 +221,52 @@ namespace MMGC.Controllers
         public IActionResult ResetPasswordConfirmation()
         {
             return View();
+        }
+
+        /// <summary>
+        /// Redirects user to appropriate dashboard based on their role
+        /// </summary>
+        private IActionResult RedirectToRoleBasedDashboard(IList<string> roles)
+        {
+            if (roles == null || roles.Count == 0)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Check roles in priority order
+            if (roles.Contains("Admin"))
+            {
+                return RedirectToAction("Dashboard", "Admin");
+            }
+            else if (roles.Contains("Doctor"))
+            {
+                return RedirectToAction("Index", "DoctorDashboard");
+            }
+            else if (roles.Contains("Nurse"))
+            {
+                return RedirectToAction("Dashboard", "Nurses");
+            }
+            else if (roles.Contains("ReceptionStaff"))
+            {
+                // Will redirect to Reception controller when created
+                return RedirectToAction("Index", "Appointments");
+            }
+            else if (roles.Contains("AccountsStaff"))
+            {
+                // Will redirect to Accounts controller when created
+                return RedirectToAction("Index", "Transactions");
+            }
+            else if (roles.Contains("LabStaff"))
+            {
+                return RedirectToAction("Index", "LabTests");
+            }
+            else if (roles.Contains("Patient"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Default fallback
+            return RedirectToAction("Index", "Home");
         }
     }
 

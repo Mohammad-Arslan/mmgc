@@ -54,6 +54,7 @@ builder.Services.AddScoped<IProcedureService, ProcedureService>();
 builder.Services.AddScoped<ILabTestService, LabTestService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IDoctorDashboardService, DoctorDashboardService>();
 
 var app = builder.Build();
 

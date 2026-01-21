@@ -45,6 +45,10 @@ public class Procedure
     [Display(Name = "Prescription")]
     public string? Prescription { get; set; }
 
+    [StringLength(5000)]
+    [Display(Name = "Treatment Summary")]
+    public string? TreatmentSummary { get; set; }
+
     [Display(Name = "Procedure Fee")]
     [Column(TypeName = "decimal(18,2)")]
     public decimal ProcedureFee { get; set; }

@@ -23,6 +23,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<Prescription> Prescriptions { get; set; }
     public DbSet<DoctorSchedule> DoctorSchedules { get; set; }
+    public DbSet<NursingNote> NursingNotes { get; set; }
+    public DbSet<PatientVital> PatientVitals { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -83,6 +85,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(lt => lt.ProcedureId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.Entity<LabTest>()
+            .HasOne(lt => lt.ApprovedByDoctor)
+            .WithMany()
+            .HasForeignKey(lt => lt.ApprovedByDoctorId)
+            .OnDelete(DeleteBehavior.NoAction);
+
         builder.Entity<Transaction>()
             .HasOne(t => t.Patient)
             .WithMany(p => p.Transactions)
@@ -129,6 +137,56 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         builder.Entity<Transaction>()
             .HasIndex(t => t.TransactionDate);
+
+        // Configure NursingNote relationships
+        builder.Entity<NursingNote>()
+            .HasOne(nn => nn.Patient)
+            .WithMany()
+            .HasForeignKey(nn => nn.PatientId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<NursingNote>()
+            .HasOne(nn => nn.Procedure)
+            .WithMany()
+            .HasForeignKey(nn => nn.ProcedureId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<NursingNote>()
+            .HasOne(nn => nn.Appointment)
+            .WithMany()
+            .HasForeignKey(nn => nn.AppointmentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<NursingNote>()
+            .HasOne(nn => nn.Nurse)
+            .WithMany()
+            .HasForeignKey(nn => nn.NurseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure PatientVital relationships
+        builder.Entity<PatientVital>()
+            .HasOne(pv => pv.Patient)
+            .WithMany()
+            .HasForeignKey(pv => pv.PatientId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<PatientVital>()
+            .HasOne(pv => pv.Procedure)
+            .WithMany()
+            .HasForeignKey(pv => pv.ProcedureId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<PatientVital>()
+            .HasOne(pv => pv.Appointment)
+            .WithMany()
+            .HasForeignKey(pv => pv.AppointmentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<PatientVital>()
+            .HasOne(pv => pv.Nurse)
+            .WithMany()
+            .HasForeignKey(pv => pv.NurseId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 

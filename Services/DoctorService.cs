@@ -142,4 +142,10 @@ public class DoctorService : IDoctorService
         return await _context.Appointments
             .CountAsync(a => a.DoctorId == doctorId);
     }
+
+    public async Task<Doctor?> GetDoctorByUserIdAsync(string userId)
+    {
+        return await _context.Doctors
+            .FirstOrDefaultAsync(d => d.UserId == userId);
+    }
 }

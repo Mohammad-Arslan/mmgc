@@ -13,4 +13,5 @@ public interface IDoctorService
     Task DeleteDoctorAsync(int id, bool forceDelete = false);
     Task<decimal> GetDoctorTotalRevenueAsync(int doctorId);
     Task<int> GetDoctorAppointmentCountAsync(int doctorId);
+    Task<Doctor?> GetDoctorByUserIdAsync(string userId);
 }

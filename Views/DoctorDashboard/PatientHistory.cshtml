@@ -1,0 +1,277 @@
+@model MMGC.Models.Patient
+@{
+    ViewData["Title"] = "Patient History";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var doctor = ViewBag.Doctor as MMGC.Models.Doctor;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-file-medical"></i> Patient History</h2>
+            <p>Complete medical history for @Model.FullName</p>
+        </div>
+        <div>
+            <a asp-action="Patients" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Patients
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Information Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-person-badge"></i> Patient Information</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>MR Number:</strong> @Model.MRNumber</p>
+                <p><strong>Name:</strong> @Model.FullName</p>
+                <p><strong>Age:</strong> @Model.Age years</p>
+                <p><strong>Gender:</strong> @Model.Gender</p>
+                <p><strong>Date of Birth:</strong> @Model.DateOfBirth.ToString("dd MMM yyyy")</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Contact:</strong> @Model.ContactNumber</p>
+                @if (!string.IsNullOrEmpty(Model.Email))
+                {
+                    <p><strong>Email:</strong> @Model.Email</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.Address))
+                {
+                    <p><strong>Address:</strong> @Model.Address</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.MedicalHistory))
+                {
+                    <p><strong>Medical History:</strong> @Model.MedicalHistory</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.Allergies))
+                {
+                    <p><strong>Allergies:</strong> <span class="text-danger">@Model.Allergies</span></p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Appointments -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Appointments (@Model.Appointments.Count())</h5>
+    </div>
+    <div class="card-body">
+        @if (Model.Appointments.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Reason</th>
+                            <th>Fee</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var appointment in Model.Appointments.OrderByDescending(a => a.AppointmentDate))
+                        {
+                            <tr>
+                                <td>@appointment.AppointmentDate.ToString("dd MMM yyyy HH:mm")</td>
+                                <td><span class="badge bg-info">@appointment.AppointmentType</span></td>
+                                <td><span class="badge bg-@(appointment.Status == "Completed" ? "success" : appointment.Status == "Cancelled" ? "danger" : "warning")">@appointment.Status</span></td>
+                                <td>@(appointment.Reason ?? "-")</td>
+                                <td>₹@appointment.ConsultationFee.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No appointments found.</p>
+        }
+    </div>
+</div>
+
+<!-- Procedures -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clipboard-pulse"></i> Procedures & Treatments (@Model.Procedures.Count())</h5>
+    </div>
+    <div class="card-body">
+        @if (Model.Procedures.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Procedure Name</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Fee</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var procedure in Model.Procedures.OrderByDescending(p => p.ProcedureDate))
+                        {
+                            <tr>
+                                <td>@procedure.ProcedureDate.ToString("dd MMM yyyy")</td>
+                                <td>@procedure.ProcedureName</td>
+                                <td><span class="badge bg-primary">@procedure.ProcedureType</span></td>
+                                <td><span class="badge bg-@(procedure.Status == "Completed" ? "success" : "warning")">@procedure.Status</span></td>
+                                <td>₹@procedure.ProcedureFee.ToString("N2")</td>
+                                <td>
+                                    <a asp-controller="Procedures" asp-action="Details" asp-route-id="@procedure.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No procedures found.</p>
+        }
+    </div>
+</div>
+
+<!-- Prescriptions -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-prescription"></i> Prescriptions (@Model.Prescriptions.Count())</h5>
+    </div>
+    <div class="card-body">
+        @if (Model.Prescriptions.Any())
+        {
+            @foreach (var prescription in Model.Prescriptions.OrderByDescending(p => p.PrescriptionDate))
+            {
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong>Date: @prescription.PrescriptionDate.ToString("dd MMM yyyy")</strong>
+                            <a asp-controller="Prescriptions" asp-action="Details" asp-route-id="@prescription.Id" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View Details
+                            </a>
+                        </div>
+                        <p><strong>Prescription:</strong></p>
+                        <p class="mb-2">@prescription.PrescriptionDetails</p>
+                        @if (!string.IsNullOrEmpty(prescription.Instructions))
+                        {
+                            <p><strong>Instructions:</strong> @prescription.Instructions</p>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-muted">No prescriptions found.</p>
+        }
+    </div>
+</div>
+
+<!-- Lab Tests & Reports -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-file-medical"></i> Lab Tests & Reports (@Model.LabTests.Count())</h5>
+    </div>
+    <div class="card-body">
+        @if (Model.LabTests.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Test Date</th>
+                            <th>Test Name</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Fee</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var labTest in Model.LabTests.OrderByDescending(lt => lt.TestDate))
+                        {
+                            <tr>
+                                <td>@labTest.TestDate.ToString("dd MMM yyyy")</td>
+                                <td>@labTest.TestName</td>
+                                <td><span class="badge bg-info">@labTest.LabTestCategory?.CategoryName</span></td>
+                                <td><span class="badge bg-@(labTest.Status == "Completed" ? "success" : labTest.Status == "Cancelled" ? "danger" : "warning")">@labTest.Status</span></td>
+                                <td>₹@labTest.TestFee.ToString("N2")</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(labTest.ReportFilePath))
+                                    {
+                                        <a href="~/@labTest.ReportFilePath" target="_blank" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-download"></i> View Report
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No report</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No lab tests found.</p>
+        }
+    </div>
+</div>
+
+<!-- Transactions -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-receipt"></i> Transactions (@Model.Transactions.Count())</h5>
+    </div>
+    <div class="card-body">
+        @if (Model.Transactions.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Payment Mode</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var transaction in Model.Transactions.OrderByDescending(t => t.TransactionDate))
+                        {
+                            <tr>
+                                <td>@transaction.TransactionDate.ToString("dd MMM yyyy")</td>
+                                <td><span class="badge bg-primary">@transaction.TransactionType</span></td>
+                                <td>₹@transaction.Amount.ToString("N2")</td>
+                                <td>@transaction.PaymentMode</td>
+                                <td><span class="badge bg-@(transaction.Status == "Completed" ? "success" : "warning")">@transaction.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No transactions found.</p>
+        }
+    </div>
+</div>
+
