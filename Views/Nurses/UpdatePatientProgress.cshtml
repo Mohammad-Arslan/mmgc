@@ -1,0 +1,139 @@
+@model MMGC.Models.NursingNote
+@{
+    ViewData["Title"] = "Update Patient Progress";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var patient = ViewBag.Patient as MMGC.Models.Patient;
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-clipboard-check"></i> Update Patient Progress</h2>
+            <p>Update patient condition and progress notes</p>
+        </div>
+        <a asp-action="NursingNotes" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Notes
+        </a>
+    </div>
+</div>
+
+@if (patient != null)
+{
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-person-circle fs-4 me-3"></i>
+            <div>
+                <strong>Patient:</strong> @patient.FullName
+                @if (!string.IsNullOrEmpty(patient.MRNumber))
+                {
+                    <span class="badge bg-primary ms-2">MR: @patient.MRNumber</span>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<div class="row">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="UpdatePatientProgress" method="post" id="progressForm" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" id="validationSummary" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Please correct the errors below</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Distinct())
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    </div>
+
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="PatientId" />
+                    <input type="hidden" asp-for="ProcedureId" />
+                    <input type="hidden" asp-for="NurseId" />
+
+                    <h5 class="mb-3"><i class="bi bi-calendar"></i> Note Information</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="NoteDate" class="form-label"></label>
+                            <input asp-for="NoteDate" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="NoteDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Patient</label>
+                            <input type="text" class="form-control" value="@patient?.FullName" readonly />
+                            <small class="form-text text-muted">Patient cannot be changed</small>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-clipboard-check"></i> Progress Update</h5>
+
+                    <div class="mb-3">
+                        <label asp-for="PatientProgress" class="form-label"></label>
+                        <textarea asp-for="PatientProgress" class="form-control" rows="6" placeholder="Enter detailed patient progress update, condition changes, response to treatment, improvement or concerns..."></textarea>
+                        <span asp-validation-for="PatientProgress" class="text-danger"></span>
+                        <small class="form-text text-muted">Maximum 1000 characters. Be specific about changes in condition, symptoms, and treatment response.</small>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-file-text"></i> Additional Notes</h5>
+
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label"></label>
+                        <textarea asp-for="Notes" class="form-control" rows="5" placeholder="Enter general nursing notes, observations, patient concerns, family communication, etc..."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                        <small class="form-text text-muted">Maximum 2000 characters</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="MedicationsAdministered" class="form-label"></label>
+                        <textarea asp-for="MedicationsAdministered" class="form-control" rows="3" placeholder="List medications administered during this period, dosages, times, and patient response..."></textarea>
+                        <span asp-validation-for="MedicationsAdministered" class="text-danger"></span>
+                        <small class="form-text text-muted">Maximum 500 characters</small>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> <strong>Important:</strong> 
+                        @if (Model.Id > 0)
+                        {
+                            <span>You are updating an existing note. Changes will be saved to the existing record.</span>
+                        }
+                        else
+                        {
+                            <span>This will create a new nursing note for this patient.</span>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="NursingNotes" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> @(Model.Id > 0 ? "Update Progress" : "Save Progress")
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Character counter for textareas
+            $('textarea').on('input', function() {
+                var maxLength = $(this).attr('maxlength');
+                if (maxLength) {
+                    var currentLength = $(this).val().length;
+                    var remaining = maxLength - currentLength;
+                    // You can add a character counter display here if needed
+                }
+            });
+        });
+    </script>
+}

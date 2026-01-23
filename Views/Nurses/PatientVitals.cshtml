@@ -1,0 +1,183 @@
+@model IEnumerable<MMGC.Models.PatientVital>
+
+@{
+    ViewData["Title"] = "Patient Vitals";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<!-- Header -->
+<div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-heart-pulse"></i> Patient Vitals</h2>
+            <p class="text-muted mb-0">View patient vital signs history</p>
+        </div>
+        <a asp-action="RecordVitals" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Record Vitals
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Search -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <input type="text" id="tableSearch" class="form-control" placeholder="Search patient...">
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="badge bg-info fs-6">Total: @Model.Count()</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>BP</th>
+                            <th>Temp</th>
+                            <th>Pulse</th>
+                            <th>Resp</th>
+                            <th>SpO₂</th>
+                            <th>Weight / Height</th>
+                            <th>Recorded By</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in Model)
+                        {
+                            <tr>
+                                <td>@v.RecordedDate.ToString("dd MMM yyyy HH:mm")</td>
+                                <td><strong>@v.Patient?.FullName</strong></td>
+                                <td>@(v.BloodPressureSystolic.HasValue ? $"{v.BloodPressureSystolic}/{v.BloodPressureDiastolic}" : "-")</td>
+                                <td>@(v.Temperature?.ToString("F1") + " °F" ?? "-")</td>
+                                <td>@(v.Pulse?.ToString() ?? "-")</td>
+                                <td>@(v.RespiratoryRate?.ToString() ?? "-")</td>
+                                <td>@(v.OxygenSaturation?.ToString() ?? "-")%</td>
+                                <td>
+                                    @(v.Weight.HasValue ? $"{v.Weight:F1} kg" : "-")
+                                    @(v.Height.HasValue ? $" / {v.Height:F1} cm" : "")
+                                </td>
+                                <td>@(v.Nurse?.FullName ?? v.RecordedBy ?? "-")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info view-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#vitalModal"
+                                            data-patient="@v.Patient?.FullName"
+                                            data-date="@v.RecordedDate.ToString("dd MMM yyyy HH:mm")"
+                                            data-bp="@(v.BloodPressureSystolic.HasValue ? $"{v.BloodPressureSystolic}/{v.BloodPressureDiastolic}" : "N/A")"
+                                            data-temp="@(v.Temperature?.ToString("F1") ?? "N/A")"
+                                            data-pulse="@(v.Pulse?.ToString() ?? "N/A")"
+                                            data-resp="@(v.RespiratoryRate?.ToString() ?? "N/A")"
+                                            data-spo2="@(v.OxygenSaturation?.ToString() ?? "N/A")"
+                                            data-weight="@(v.Weight?.ToString("F1") ?? "N/A")"
+                                            data-height="@(v.Height?.ToString("F1") ?? "N/A")"
+                                            data-notes="@v.Notes">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <p class="text-muted">No vitals recorded yet.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- SINGLE MODAL (NO FADE) -->
+<div class="modal" id="vitalModal" tabindex="-1"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-heart-pulse"></i> Vital Details</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Patient:</strong> <span id="mPatient"></span></p>
+                <p><strong>Date:</strong> <span id="mDate"></span></p>
+                <hr>
+                <p><strong>BP:</strong> <span id="mBP"></span></p>
+                <p><strong>Temperature:</strong> <span id="mTemp"></span></p>
+                <p><strong>Pulse:</strong> <span id="mPulse"></span></p>
+                <p><strong>Resp Rate:</strong> <span id="mResp"></span></p>
+                <p><strong>SpO₂:</strong> <span id="mSpO2"></span></p>
+                <p><strong>Weight:</strong> <span id="mWeight"></span></p>
+                <p><strong>Height:</strong> <span id="mHeight"></span></p>
+                <div id="mNotesWrap" class="mt-3 d-none">
+                    <hr>
+                    <strong>Notes:</strong>
+                    <p id="mNotes"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Search
+    $("#tableSearch").on("keyup", function () {
+        var v = $(this).val().toLowerCase();
+        $("tbody tr").filter(function () {
+            $(this).toggle($(this).text().toLowerCase().indexOf(v) > -1);
+        });
+    });
+
+    // Populate modal
+    $(document).on("click", ".view-btn", function () {
+        const b = $(this);
+
+        $("#mPatient").text(b.data("patient"));
+        $("#mDate").text(b.data("date"));
+        $("#mBP").text(b.data("bp"));
+        $("#mTemp").text(b.data("temp") + " °F");
+        $("#mPulse").text(b.data("pulse"));
+        $("#mResp").text(b.data("resp"));
+        $("#mSpO2").text(b.data("spo2") + "%");
+        $("#mWeight").text(b.data("weight") + " kg");
+        $("#mHeight").text(b.data("height") + " cm");
+
+        if (b.data("notes")) {
+            $("#mNotes").text(b.data("notes"));
+            $("#mNotesWrap").removeClass("d-none");
+        } else {
+            $("#mNotesWrap").addClass("d-none");
+        }
+    });
+</script>
+}

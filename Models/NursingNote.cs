@@ -8,9 +8,12 @@ public class NursingNote
     [Key]
     public int Id { get; set; }
 
-    [Required]
+    // Make nullable to allow empty option from the select to bind to null.
+    // Keep Required so validation still forces user to pick one.
+    [Required(ErrorMessage = "Please select a patient.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a valid patient.")]
     [Display(Name = "Patient")]
-    public int PatientId { get; set; }
+    public int? PatientId { get; set; }
 
     [Display(Name = "Procedure")]
     public int? ProcedureId { get; set; }
@@ -18,9 +21,12 @@ public class NursingNote
     [Display(Name = "Appointment")]
     public int? AppointmentId { get; set; }
 
-    [Required]
+    // Make nullable to allow empty option from the select to bind to null.
+    // Keep Required so validation still forces user to pick one.
+    [Required(ErrorMessage = "Please select a nurse.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a valid nurse.")]
     [Display(Name = "Nurse")]
-    public int NurseId { get; set; }
+    public int? NurseId { get; set; }
 
     [Required]
     [Display(Name = "Note Date")]
@@ -52,7 +58,7 @@ public class NursingNote
 
     // Navigation properties
     [ForeignKey("PatientId")]
-    public virtual Patient Patient { get; set; } = null!;
+    public virtual Patient? Patient { get; set; }
 
     [ForeignKey("ProcedureId")]
     public virtual Procedure? Procedure { get; set; }
@@ -61,6 +67,6 @@ public class NursingNote
     public virtual Appointment? Appointment { get; set; }
 
     [ForeignKey("NurseId")]
-    public virtual Nurse Nurse { get; set; } = null!;
+    public virtual Nurse? Nurse { get; set; }
 }
 

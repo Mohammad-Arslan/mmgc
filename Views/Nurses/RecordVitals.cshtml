@@ -1,0 +1,212 @@
+@model MMGC.Models.PatientVital
+@{
+    ViewData["Title"] = "Record Patient Vitals";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-heart-pulse"></i> Record Patient Vitals</h2>
+            <p>Record patient vital signs and measurements</p>
+        </div>
+        <a asp-action="PatientVitals" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Vitals
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="RecordVitals" method="post" id="vitalsForm" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" id="validationSummary" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Please correct the errors below</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Distinct())
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    </div>
+
+                    <h5 class="mb-3"><i class="bi bi-person"></i> Patient & Context Information</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PatientId" class="form-label"></label>
+                            <select asp-for="PatientId" asp-items="ViewBag.Patients" class="form-select" id="PatientId" required>
+                                <option value="">-- Select Patient --</option>
+                            </select>
+                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="RecordedDate" class="form-label"></label>
+                            <input asp-for="RecordedDate" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="RecordedDate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ProcedureId" class="form-label"></label>
+                            <select asp-for="ProcedureId" asp-items="ViewBag.Procedures" class="form-select" id="ProcedureId">
+                                <option value="">-- Select Procedure (Optional) --</option>
+                            </select>
+                            <span asp-validation-for="ProcedureId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="AppointmentId" class="form-label"></label>
+                            <select asp-for="AppointmentId" asp-items="ViewBag.Appointments" class="form-select" id="AppointmentId">
+                                <option value="">-- Select Appointment (Optional) --</option>
+                            </select>
+                            <span asp-validation-for="AppointmentId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-heart-pulse"></i> Vital Signs</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="BloodPressureSystolic" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="BloodPressureSystolic" class="form-control" type="number" min="0" max="300" placeholder="e.g., 120" />
+                                <span class="input-group-text">mmHg</span>
+                            </div>
+                            <span asp-validation-for="BloodPressureSystolic" class="text-danger"></span>
+                            <small class="form-text text-muted">Systolic (top number)</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="BloodPressureDiastolic" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="BloodPressureDiastolic" class="form-control" type="number" min="0" max="200" placeholder="e.g., 80" />
+                                <span class="input-group-text">mmHg</span>
+                            </div>
+                            <span asp-validation-for="BloodPressureDiastolic" class="text-danger"></span>
+                            <small class="form-text text-muted">Diastolic (bottom number)</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Temperature" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Temperature" class="form-control" type="number" step="0.1" min="90" max="110" placeholder="e.g., 98.6" />
+                                <span class="input-group-text">°F</span>
+                            </div>
+                            <span asp-validation-for="Temperature" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Pulse" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Pulse" class="form-control" type="number" min="0" max="250" placeholder="e.g., 72" />
+                                <span class="input-group-text">BPM</span>
+                            </div>
+                            <span asp-validation-for="Pulse" class="text-danger"></span>
+                            <small class="form-text text-muted">Heart rate in beats per minute</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="RespiratoryRate" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="RespiratoryRate" class="form-control" type="number" min="0" max="60" placeholder="e.g., 16" />
+                                <span class="input-group-text">per min</span>
+                            </div>
+                            <span asp-validation-for="RespiratoryRate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="OxygenSaturation" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="OxygenSaturation" class="form-control" type="number" min="0" max="100" placeholder="e.g., 98" />
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <span asp-validation-for="OxygenSaturation" class="text-danger"></span>
+                            <small class="form-text text-muted">SpO2 level</small>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-rulers"></i> Measurements</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Weight" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Weight" class="form-control" type="number" step="0.1" min="0" max="500" placeholder="e.g., 70.5" />
+                                <span class="input-group-text">kg</span>
+                            </div>
+                            <span asp-validation-for="Weight" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Height" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Height" class="form-control" type="number" step="0.1" min="0" max="250" placeholder="e.g., 170.0" />
+                                <span class="input-group-text">cm</span>
+                            </div>
+                            <span asp-validation-for="Height" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label"></label>
+                        <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Additional notes or observations about the vital signs..."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                        <small class="form-text text-muted">Maximum 500 characters</small>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Note:</strong> You can leave fields empty if not applicable. At least one vital sign should be recorded.
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="PatientVitals" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Record Vitals
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Add validation to ensure at least one vital is recorded
+            $('#vitalsForm').on('submit', function(e) {
+                var hasVitals = false;
+                
+                // Check if any vital field has a value
+                if ($('#BloodPressureSystolic').val() || 
+                    $('#BloodPressureDiastolic').val() || 
+                    $('#Temperature').val() || 
+                    $('#Pulse').val() || 
+                    $('#RespiratoryRate').val() || 
+                    $('#OxygenSaturation').val() || 
+                    $('#Weight').val() || 
+                    $('#Height').val()) {
+                    hasVitals = true;
+                }
+                
+                if (!hasVitals) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No Vitals Recorded',
+                        text: 'Please record at least one vital sign or measurement.',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    return false;
+                }
+            });
+        });
+    </script>
+}

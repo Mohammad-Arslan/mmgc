@@ -1,0 +1,234 @@
+@model MMGC.Models.NursingNote
+@{
+    ViewData["Title"] = "Create Nursing Note";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-file-text"></i> Create Nursing Note</h2>
+            <p>Record a new nursing note</p>
+        </div>
+        <a asp-action="NursingNotes" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Notes
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="CreateNursingNote" method="post" id="nursingNoteForm">
+                    @Html.AntiForgeryToken()
+                    
+                    @* Hidden fields to ensure values are submitted *@
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="CreatedDate" />
+                    <input type="hidden" asp-for="CreatedBy" />
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert" id="validationSummary">
+                            <strong><i class="bi bi-exclamation-triangle"></i> Please correct the errors below</strong>
+                            <ul class="mb-0 mt-2">
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Distinct())
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <h5 class="mb-3"><i class="bi bi-person"></i> Patient & Context Information</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PatientId" class="form-label"><strong>Patient <span class="text-danger">*</span></strong></label>
+                            <select asp-for="PatientId" asp-items="ViewBag.Patients" class="form-select" id="PatientId" required>
+                                <option value="">-- Select Patient --</option>
+                            </select>
+                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                            <div class="invalid-feedback">Please select a patient.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="NoteDate" class="form-label"></label>
+                            <input asp-for="NoteDate" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="NoteDate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ProcedureId" class="form-label"></label>
+                            <select asp-for="ProcedureId" asp-items="ViewBag.Procedures" class="form-select" id="ProcedureId">
+                                <option value="">-- Select Procedure (Optional) --</option>
+                            </select>
+                            <span asp-validation-for="ProcedureId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="AppointmentId" class="form-label"></label>
+                            <select asp-for="AppointmentId" asp-items="ViewBag.Appointments" class="form-select" id="AppointmentId">
+                                <option value="">-- Select Appointment (Optional) --</option>
+                            </select>
+                            <span asp-validation-for="AppointmentId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="NurseId" class="form-label"><strong>Nurse <span class="text-danger">*</span></strong></label>
+                        <select asp-for="NurseId" asp-items="ViewBag.Nurses" class="form-select" id="NurseId" required>
+                            <option value="">-- Select Nurse --</option>
+                        </select>
+                        <span asp-validation-for="NurseId" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            @if (ViewBag.CurrentNurseId != null)
+                            {
+                                <span class="text-info"><i class="bi bi-info-circle"></i> Your profile is pre-selected. You can change it if needed.</span>
+                            }
+                            else
+                            {
+                                <span>If not selected, your profile will be automatically assigned if available.</span>
+                            }
+                        </small>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-file-text"></i> Note Details</h5>
+
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label"></label>
+                        <textarea asp-for="Notes" class="form-control" rows="5" placeholder="Enter nursing notes, observations, and any relevant information..."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                        <small class="form-text text-muted">Maximum 2000 characters</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PatientProgress" class="form-label"></label>
+                        <textarea asp-for="PatientProgress" class="form-control" rows="4" placeholder="Enter patient progress updates, condition changes, response to treatment..."></textarea>
+                        <span asp-validation-for="PatientProgress" class="text-danger"></span>
+                        <small class="form-text text-muted">Maximum 1000 characters</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="MedicationsAdministered" class="form-label"></label>
+                        <textarea asp-for="MedicationsAdministered" class="form-control" rows="3" placeholder="List medications administered, dosages, and times..."></textarea>
+                        <span asp-validation-for="MedicationsAdministered" class="text-danger"></span>
+                        <small class="form-text text-muted">Maximum 500 characters</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Vitals" class="form-label"></label>
+                        <textarea asp-for="Vitals" class="form-control" rows="2" placeholder="Record vital signs if applicable (BP, Temperature, Pulse, etc.)..."></textarea>
+                        <span asp-validation-for="Vitals" class="text-danger"></span>
+                        <small class="form-text text-muted">Maximum 500 characters. For detailed vitals, use the Record Vitals feature.</small>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="NursingNotes" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Save Note
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Form validation before submission
+            $('#nursingNoteForm').on('submit', function(e) {
+                var hasError = false;
+                var errors = [];
+                
+                // Validate PatientId
+                var patientId = $('#PatientId').val();
+                console.log('PatientId value:', patientId, 'Type:', typeof patientId);
+                if (!patientId || patientId === '' || patientId === '0' || parseInt(patientId) <= 0) {
+                    $('#PatientId').addClass('is-invalid');
+                    hasError = true;
+                    errors.push('Please select a patient.');
+                } else {
+                    $('#PatientId').removeClass('is-invalid');
+                }
+                
+                // Validate NurseId
+                var nurseId = $('#NurseId').val();
+                console.log('NurseId value:', nurseId, 'Type:', typeof nurseId);
+                if (!nurseId || nurseId === '' || nurseId === '0' || parseInt(nurseId) <= 0) {
+                    $('#NurseId').addClass('is-invalid');
+                    hasError = true;
+                    errors.push('Please select a nurse.');
+                } else {
+                    $('#NurseId').removeClass('is-invalid');
+                }
+                
+                if (hasError) {
+                    e.preventDefault();
+                    // Show validation summary
+                    var vs = document.getElementById('validationSummary');
+                    if (!vs) {
+                        var formStart = $('h5').first();
+                        if (formStart.length) {
+                            var errorList = errors.map(function(err) { return '<li>' + err + '</li>'; }).join('');
+                            vs = $('<div class="alert alert-danger alert-dismissible fade show" role="alert" id="validationSummary">' +
+                                '<strong><i class="bi bi-exclamation-triangle"></i> Please correct the errors below</strong>' +
+                                '<ul class="mb-0 mt-2">' + errorList + '</ul>' +
+                                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                                '</div>');
+                            formStart.before(vs);
+                        }
+                    } else {
+                        vs.show();
+                    }
+                    
+                    // Scroll to first error
+                    var firstInvalid = $('.is-invalid').first();
+                    if (firstInvalid.length) {
+                        $('html, body').animate({
+                            scrollTop: firstInvalid.offset().top - 100
+                        }, 500);
+                    }
+                    
+                    return false;
+                }
+                
+                // Log form data before submission
+                console.log('Form submitting with:', {
+                    PatientId: patientId,
+                    NurseId: nurseId,
+                    ProcedureId: $('#ProcedureId').val(),
+                    AppointmentId: $('#AppointmentId').val()
+                });
+                
+                // Disable submit button to prevent duplicate submissions
+                var submitBtn = $(this).find('button[type="submit"]');
+                if (submitBtn.length) {
+                    submitBtn.prop('disabled', true);
+                    var originalText = submitBtn.html();
+                    submitBtn.html('<i class="bi bi-hourglass-split"></i> Saving...');
+                    
+                    // Re-enable after 5 seconds as fallback
+                    setTimeout(function() {
+                        submitBtn.prop('disabled', false);
+                        submitBtn.html(originalText);
+                    }, 5000);
+                }
+            });
+            
+            // Remove invalid class on change
+            $('#PatientId').on('change', function() {
+                if ($(this).val() && $(this).val() !== '' && $(this).val() !== '0') {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+        });
+    </script>
+}

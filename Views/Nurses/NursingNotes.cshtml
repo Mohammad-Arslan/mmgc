@@ -1,0 +1,169 @@
+@model IEnumerable<MMGC.Models.NursingNote>
+@{
+    ViewData["Title"] = "Nursing Notes";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-file-text"></i> Nursing Notes</h2>
+            <p>View and manage nursing notes</p>
+        </div>
+        <a asp-action="CreateNursingNote" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Note
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="tableSearch" class="form-control" placeholder="Search notes by patient, notes content...">
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="badge bg-info fs-6">Total: @Model.Count() Notes</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nursing Notes Table -->
+<div class="card">
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th><i class="bi bi-calendar"></i> Date</th>
+                            <th><i class="bi bi-person"></i> Patient</th>
+                            <th><i class="bi bi-clipboard-pulse"></i> Procedure</th>
+                            <th><i class="bi bi-person-badge"></i> Nurse</th>
+                            <th><i class="bi bi-file-text"></i> Notes</th>
+                            <th><i class="bi bi-heart-pulse"></i> Progress</th>
+                            <th><i class="bi bi-gear"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <i class="bi bi-calendar-event text-primary"></i> 
+                                    @item.NoteDate.ToString("dd MMM yyyy HH:mm")
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            @(item.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
+                                        </div>
+                                        <strong>@item.Patient?.FullName</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.Procedure != null)
+                                    {
+                                        <span class="badge bg-secondary">@item.Procedure.ProcedureName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>@item.Nurse?.FullName</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Notes))
+                                    {
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="@item.Notes">
+                                            @(item.Notes.Length > 50 ? item.Notes.Substring(0, 50) + "..." : item.Notes)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.PatientProgress))
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Updated
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="UpdatePatientProgress" asp-route-patientId="@item.PatientId" asp-route-procedureId="@item.ProcedureId" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Update Progress">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="CreateNursingNote" asp-route-patientId="@item.PatientId" asp-route-procedureId="@item.ProcedureId" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Create New Note">
+                                            <i class="bi bi-plus-circle"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-file-text" style="font-size: 4rem; color: #e0e0e0;"></i>
+                <p class="text-muted mt-3 mb-0">No nursing notes recorded yet.</p>
+                <a asp-action="CreateNursingNote" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Create First Note
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Table search functionality
+            $("#tableSearch").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("table tbody tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        });
+    </script>
+}
