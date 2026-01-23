@@ -22,7 +22,14 @@
         <div class="card">
             <div class="card-body">
                 <form asp-action="Create" method="post" id="userForm">
-                    <div asp-validation-summary="All" class="alert alert-danger" role="alert" style="display: none;"></div>
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
                     
                     <h5 class="mb-3"><i class="bi bi-person"></i> Personal Information</h5>
                     
@@ -207,12 +214,14 @@
             }
 
             form.addEventListener('submit', function(e) {
+                // Always show validation summary on submit attempt
+                if (validationSummary) {
+                    validationSummary.style.display = 'block';
+                }
+                
                 if (!form.checkValidity()) {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (validationSummary) {
-                        validationSummary.style.display = 'block';
-                    }
                 } else {
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
@@ -220,8 +229,11 @@
             });
 
             // Show validation summary if there are errors
-            if (validationSummary && validationSummary.querySelectorAll('.text-danger').length > 0) {
-                validationSummary.style.display = 'block';
+            if (validationSummary) {
+                var hasErrors = validationSummary.querySelectorAll('.text-danger, .field-validation-error').length > 0;
+                if (hasErrors || validationSummary.textContent.trim().length > 0) {
+                    validationSummary.style.display = 'block';
+                }
             }
         });
     </script>

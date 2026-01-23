@@ -42,20 +42,52 @@ public class NursesController : Controller
     private async Task<Nurse?> GetCurrentNurseAsync()
     {
         var user = await _userManager.GetUserAsync(User);
-        if (user == null) return null;
+        if (user == null)
+        {
+            _logger.LogWarning("GetCurrentNurseAsync: User is null");
+            return null;
+        }
 
-        // Try to find nurse by UserId
+        // Try to find nurse by UserId first
         var nurse = await _context.Nurses
             .FirstOrDefaultAsync(n => n.UserId == user.Id);
         
-        // If not found by UserId, try to find by email
-        if (nurse == null && !string.IsNullOrEmpty(user.Email))
+        if (nurse != null)
         {
-            var allNurses = await _nurseRepository.GetAllAsync();
-            nurse = allNurses.FirstOrDefault(n => n.Email?.ToLower() == user.Email.ToLower());
+            _logger.LogDebug("GetCurrentNurseAsync: Found nurse {NurseId} by UserId {UserId}", nurse.Id, user.Id);
+            return nurse;
+        }
+        
+        // If not found by UserId, try to find by email and link it
+        if (!string.IsNullOrEmpty(user.Email))
+        {
+            nurse = await _context.Nurses
+                .FirstOrDefaultAsync(n => n.Email != null && n.Email.ToLower() == user.Email.ToLower());
+            
+            if (nurse != null)
+            {
+                // Link the nurse profile to the user by setting UserId
+                if (string.IsNullOrEmpty(nurse.UserId))
+                {
+                    _logger.LogInformation("Linking nurse profile {NurseId} to user {UserId} by email {Email}", 
+                        nurse.Id, user.Id, user.Email);
+                    nurse.UserId = user.Id;
+                    nurse.UpdatedDate = DateTime.Now;
+                    await _context.SaveChangesAsync();
+                }
+                else if (nurse.UserId != user.Id)
+                {
+                    _logger.LogWarning("Nurse profile {NurseId} has different UserId {NurseUserId} than current user {UserId}", 
+                        nurse.Id, nurse.UserId, user.Id);
+                }
+                
+                return nurse;
+            }
         }
 
-        return nurse;
+        _logger.LogWarning("GetCurrentNurseAsync: No nurse profile found for user {UserId} with email {Email}", 
+            user.Id, user.Email);
+        return null;
     }
 
     // GET: Nurses/Dashboard

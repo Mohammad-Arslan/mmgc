@@ -33,13 +33,23 @@ public class PatientsController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return null;
 
+        // Try to find nurse by UserId first
         var nurse = await _context.Nurses
             .FirstOrDefaultAsync(n => n.UserId == user.Id);
         
+        // If not found by UserId, try to find by email and link it
         if (nurse == null && !string.IsNullOrEmpty(user.Email))
         {
-            var allNurses = await _context.Nurses.ToListAsync();
-            nurse = allNurses.FirstOrDefault(n => n.Email?.ToLower() == user.Email.ToLower());
+            nurse = await _context.Nurses
+                .FirstOrDefaultAsync(n => n.Email != null && n.Email.ToLower() == user.Email.ToLower());
+            
+            if (nurse != null && string.IsNullOrEmpty(nurse.UserId))
+            {
+                // Link the nurse profile to the user
+                nurse.UserId = user.Id;
+                nurse.UpdatedDate = DateTime.Now;
+                await _context.SaveChangesAsync();
+            }
         }
 
         return nurse;

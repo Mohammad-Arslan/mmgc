@@ -55,6 +55,7 @@ services:
       - SQLPAD_CONNECTIONS__mmgc__password=${MSSQL_SA_PASSWORD}
     ports:
       - "${SQLPAD_PORT:-5002}:3000"
+    restart: unless-stopped
     depends_on:
       mssql:
         condition: service_healthy
