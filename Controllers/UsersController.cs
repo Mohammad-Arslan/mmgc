@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MMGC.Data;
 using MMGC.Models;
+using MMGC.Services;
 
 namespace MMGC.Controllers;
 
@@ -13,15 +14,21 @@ public class UsersController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly ApplicationDbContext _context;
+    private readonly IDoctorService _doctorService;
     private readonly ILogger<UsersController> _logger;
 
     public UsersController(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
+        ApplicationDbContext context,
+        IDoctorService doctorService,
         ILogger<UsersController> logger)
     {
         _userManager = userManager;
         _roleManager = roleManager;
+        _context = context;
+        _doctorService = doctorService;
         _logger = logger;
     }
 
@@ -144,9 +151,14 @@ public class UsersController : Controller
                     {
                         _logger.LogWarning("Failed to add user {Email} to role {Role}", model.Email, model.Role);
                     }
+                    else
+                    {
+                        // Create profile record based on role
+                        await CreateProfileRecordAsync(user, model.Role, model);
+                    }
                 }
 
-                TempData["SuccessMessage"] = "User created successfully!";
+                TempData["SuccessMessage"] = "User and profile created successfully!";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -341,6 +353,126 @@ public class UsersController : Controller
     {
         var roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync();
         ViewBag.Roles = new SelectList(roles, "Name", "Name");
+    }
+
+    /// <summary>
+    /// Creates a profile record in the appropriate table based on the user's role
+    /// </summary>
+    private async Task CreateProfileRecordAsync(ApplicationUser user, string role, UserCreateViewModel model)
+    {
+        try
+        {
+            switch (role)
+            {
+                case "Doctor":
+                    var doctor = new Doctor
+                    {
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        Email = model.Email,
+                        ContactNumber = model.PhoneNumber,
+                        Specialization = model.Specialization ?? "General",
+                        LicenseNumber = model.LicenseNumber,
+                        ConsultationFee = model.ConsultationFee ?? 0,
+                        Address = model.Address,
+                        UserId = user.Id,
+                        IsActive = true,
+                        CreatedDate = DateTime.Now
+                    };
+                    await _doctorService.CreateDoctorAsync(doctor);
+                    _logger.LogInformation("Created Doctor profile for user {Email}", model.Email);
+                    break;
+
+                case "Nurse":
+                    var nurse = new Nurse
+                    {
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        Email = model.Email,
+                        ContactNumber = model.PhoneNumber,
+                        Department = model.Department,
+                        LicenseNumber = model.LicenseNumber,
+                        UserId = user.Id,
+                        IsActive = true,
+                        CreatedDate = DateTime.Now
+                    };
+                    _context.Nurses.Add(nurse);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Created Nurse profile for user {Email}", model.Email);
+                    break;
+
+                case "ReceptionStaff":
+                    var receptionStaff = new ReceptionStaff
+                    {
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        Email = model.Email,
+                        ContactNumber = model.PhoneNumber,
+                        Department = model.Department ?? "Reception",
+                        EmployeeId = model.EmployeeId,
+                        UserId = user.Id,
+                        IsActive = true,
+                        CreatedDate = DateTime.Now
+                    };
+                    _context.ReceptionStaffs.Add(receptionStaff);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Created ReceptionStaff profile for user {Email}", model.Email);
+                    break;
+
+                case "AccountsStaff":
+                    var accountsStaff = new AccountsStaff
+                    {
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        Email = model.Email,
+                        ContactNumber = model.PhoneNumber,
+                        Department = model.Department ?? "Accounts",
+                        EmployeeId = model.EmployeeId,
+                        UserId = user.Id,
+                        IsActive = true,
+                        CreatedDate = DateTime.Now
+                    };
+                    _context.AccountsStaffs.Add(accountsStaff);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Created AccountsStaff profile for user {Email}", model.Email);
+                    break;
+
+                case "LabStaff":
+                    // LabStaff can use a generic staff model or create a specific one
+                    // For now, we'll create a ReceptionStaff-like record or you can create a LabStaff model
+                    var labStaff = new ReceptionStaff
+                    {
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        Email = model.Email,
+                        ContactNumber = model.PhoneNumber,
+                        Department = model.Department ?? "Laboratory",
+                        EmployeeId = model.EmployeeId,
+                        UserId = user.Id,
+                        IsActive = true,
+                        CreatedDate = DateTime.Now
+                    };
+                    _context.ReceptionStaffs.Add(labStaff);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Created LabStaff profile for user {Email}", model.Email);
+                    break;
+
+                // Admin and Patient roles don't need separate profile tables
+                case "Admin":
+                case "Patient":
+                    _logger.LogInformation("No profile record needed for role {Role}", role);
+                    break;
+
+                default:
+                    _logger.LogWarning("Unknown role {Role} for user {Email}", role, model.Email);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating profile record for user {Email} with role {Role}", model.Email, role);
+            // Don't throw - user is already created, profile can be created later
+        }
     }
 }
 

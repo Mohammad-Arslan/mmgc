@@ -19,93 +19,327 @@
             </div>
             
             <ul class="sidebar-nav">
-                <li class="sidebar-item">
-                    <a class="sidebar-link" asp-controller="Admin" asp-action="Dashboard">
-                        <i class="bi bi-speedometer2"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Admin" asp-action="Dashboard">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                }
+                else if (User.IsInRole("Doctor"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="DoctorDashboard" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                }
+                else if (User.IsInRole("Nurse"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Nurses" asp-action="Dashboard">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                }
+                else if (User.IsInRole("ReceptionStaff"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Appointments" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                }
+                else if (User.IsInRole("AccountsStaff"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Transactions" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                }
+                else if (User.IsInRole("LabStaff"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="LabTests" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                }
                 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="#appointmentsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="bi bi-calendar-check"></i>
-                        <span>Appointments</span>
-                        <i class="bi bi-chevron-down ms-auto"></i>
-                    </a>
-                    <ul class="collapse sidebar-submenu" id="appointmentsSubmenu">
-                        <li><a asp-controller="Appointments" asp-action="Index">All Appointments</a></li>
-                        <li><a asp-controller="Appointments" asp-action="Create">New Appointment</a></li>
-                    </ul>
-                </li>
+                @* Appointments - Doctor: My Appointments only; ReceptionStaff/Admin: All + New; Nurse: View assigned *@
+                @if (User.IsInRole("Doctor"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="DoctorDashboard" asp-action="AppointmentsHistory">
+                            <i class="bi bi-calendar-check"></i>
+                            <span>My Appointments</span>
+                        </a>
+                    </li>
+                }
+                else if (User.IsInRole("Admin") || User.IsInRole("ReceptionStaff"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#appointmentsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-calendar-check"></i>
+                            <span>Appointments</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="appointmentsSubmenu">
+                            <li><a asp-controller="Appointments" asp-action="Index">All Appointments</a></li>
+                            <li><a asp-controller="Appointments" asp-action="Create">New Appointment</a></li>
+                        </ul>
+                    </li>
+                }
+                else if (User.IsInRole("Nurse"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Appointments" asp-action="Index">
+                            <i class="bi bi-calendar-check"></i>
+                            <span>Assigned Appointments</span>
+                        </a>
+                    </li>
+                }
                 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="#patientsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="bi bi-people"></i>
-                        <span>Patients</span>
-                        <i class="bi bi-chevron-down ms-auto"></i>
-                    </a>
-                    <ul class="collapse sidebar-submenu" id="patientsSubmenu">
-                        <li><a asp-controller="Patients" asp-action="Index">All Patients</a></li>
-                        <li><a asp-controller="Patients" asp-action="Create">Register Patient</a></li>
-                    </ul>
-                </li>
+                @* Patients - Doctor: My Patients only; ReceptionStaff/Admin: All + Register; Nurse: View patients they assist *@
+                @if (User.IsInRole("Doctor"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#patientsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-people"></i>
+                            <span>Patients</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="patientsSubmenu">
+                            <li><a asp-controller="DoctorDashboard" asp-action="Patients">My Patients</a></li>
+                        </ul>
+                    </li>
+                }
+                else if (User.IsInRole("Admin") || User.IsInRole("ReceptionStaff"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#patientsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-people"></i>
+                            <span>Patients</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="patientsSubmenu">
+                            <li><a asp-controller="Patients" asp-action="Index">All Patients</a></li>
+                            @if (User.IsInRole("ReceptionStaff") || User.IsInRole("Admin"))
+                            {
+                                <li><a asp-controller="Patients" asp-action="Create">Register Patient</a></li>
+                            }
+                        </ul>
+                    </li>
+                }
+                else if (User.IsInRole("Nurse"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Patients" asp-action="Index">
+                            <i class="bi bi-people"></i>
+                            <span>Patients</span>
+                        </a>
+                    </li>
+                }
                 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="#doctorsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="bi bi-person-badge"></i>
-                        <span>Doctors</span>
-                        <i class="bi bi-chevron-down ms-auto"></i>
-                    </a>
-                    <ul class="collapse sidebar-submenu" id="doctorsSubmenu">
-                        <li><a asp-controller="Doctors" asp-action="Index">All Doctors</a></li>
-                        <li><a asp-controller="Doctors" asp-action="Create">Add Doctor</a></li>
-                    </ul>
-                </li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#doctorsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-person-badge"></i>
+                            <span>Doctors</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="doctorsSubmenu">
+                            <li><a asp-controller="Doctors" asp-action="Index">All Doctors</a></li>
+                            <li><a asp-controller="Doctors" asp-action="Create">Add Doctor</a></li>
+                        </ul>
+                    </li>
+                }
                 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="#proceduresSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="bi bi-clipboard-pulse"></i>
-                        <span>Procedures</span>
-                        <i class="bi bi-chevron-down ms-auto"></i>
-                    </a>
-                    <ul class="collapse sidebar-submenu" id="proceduresSubmenu">
-                        <li><a asp-controller="Procedures" asp-action="Index">All Procedures</a></li>
-                        <li><a asp-controller="Procedures" asp-action="Create">New Procedure</a></li>
-                    </ul>
-                </li>
+                @* Procedures - Doctor: New Procedure (to add details, prescribe, create treatment summary); Admin: All + New; Nurse: View assigned procedures *@
+                @if (User.IsInRole("Doctor"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Procedures" asp-action="Create">
+                            <i class="bi bi-clipboard-pulse"></i>
+                            <span>New Procedure</span>
+                        </a>
+                    </li>
+                }
+                else if (User.IsInRole("Admin"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#proceduresSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-clipboard-pulse"></i>
+                            <span>Procedures</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="proceduresSubmenu">
+                            <li><a asp-controller="Procedures" asp-action="Index">All Procedures</a></li>
+                            <li><a asp-controller="Procedures" asp-action="Create">New Procedure</a></li>
+                        </ul>
+                    </li>
+                }
+                else if (User.IsInRole("Nurse"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Procedures" asp-action="Index">
+                            <i class="bi bi-clipboard-pulse"></i>
+                            <span>Assigned Procedures</span>
+                        </a>
+                    </li>
+                }
                 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="#labSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="bi bi-file-medical"></i>
-                        <span>Laboratory</span>
-                        <i class="bi bi-chevron-down ms-auto"></i>
-                    </a>
-                    <ul class="collapse sidebar-submenu" id="labSubmenu">
-                        <li><a asp-controller="LabTests" asp-action="Index">All Lab Tests</a></li>
-                        <li><a asp-controller="LabTests" asp-action="Create">New Lab Test</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a asp-controller="LabTestCategories" asp-action="Index">Test Categories</a></li>
-                    </ul>
-                </li>
+                @* Laboratory - Doctor: View and approve reports; LabStaff: Book tests, upload reports; Admin: Full access *@
+                @if (User.IsInRole("Doctor"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="LabTests" asp-action="Index">
+                            <i class="bi bi-file-medical"></i>
+                            <span>Lab Reports</span>
+                        </a>
+                    </li>
+                }
+                else if (User.IsInRole("LabStaff"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#labSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-file-medical"></i>
+                            <span>Laboratory</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="labSubmenu">
+                            <li><a asp-controller="LabTests" asp-action="Index">All Lab Tests</a></li>
+                            <li><a asp-controller="LabTests" asp-action="Create">Book Test</a></li>
+                            <li><a asp-controller="LabTests" asp-action="UploadReport">Upload Report</a></li>
+                        </ul>
+                    </li>
+                }
+                else if (User.IsInRole("Admin"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#labSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-file-medical"></i>
+                            <span>Laboratory</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="labSubmenu">
+                            <li><a asp-controller="LabTests" asp-action="Index">All Lab Tests</a></li>
+                            <li><a asp-controller="LabTests" asp-action="Create">New Lab Test</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a asp-controller="LabTestCategories" asp-action="Index">Test Categories</a></li>
+                        </ul>
+                    </li>
+                }
                 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" asp-controller="Transactions" asp-action="Index">
-                        <i class="bi bi-cash-coin"></i>
-                        <span>Transactions</span>
-                    </a>
-                </li>
+                @* Transactions - Only Admin and AccountsStaff *@
+                @if (User.IsInRole("Admin") || User.IsInRole("AccountsStaff"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#transactionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-cash-coin"></i>
+                            <span>Transactions</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="transactionsSubmenu">
+                            <li><a asp-controller="Transactions" asp-action="Index">All Transactions</a></li>
+                            @if (User.IsInRole("AccountsStaff") || User.IsInRole("Admin"))
+                            {
+                                <li><a asp-controller="Transactions" asp-action="Create">New Transaction</a></li>
+                            }
+                        </ul>
+                    </li>
+                }
                 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="#usersSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="bi bi-people-fill"></i>
-                        <span>Users & Admin</span>
-                        <i class="bi bi-chevron-down ms-auto"></i>
-                    </a>
-                    <ul class="collapse sidebar-submenu" id="usersSubmenu">
-                        <li><a asp-controller="Users" asp-action="Index">All Users</a></li>
-                        <li><a asp-controller="Users" asp-action="Create">Create User</a></li>
-                    </ul>
-                </li>
+                @* Doctor-specific menu items *@
+                @if (User.IsInRole("Doctor"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="DoctorDashboard" asp-action="Profile">
+                            <i class="bi bi-person-circle"></i>
+                            <span>My Profile</span>
+                        </a>
+                    </li>
+                }
+                
+                @* ReceptionStaff-specific menu items *@
+                @if (User.IsInRole("ReceptionStaff"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="Patients" asp-action="Create">
+                            <i class="bi bi-person-plus"></i>
+                            <span>Register Patient</span>
+                        </a>
+                    </li>
+                }
+                
+                @* AccountsStaff-specific menu items *@
+                @if (User.IsInRole("AccountsStaff"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#accountsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-receipt"></i>
+                            <span>Accounts</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="accountsSubmenu">
+                            <li><a asp-controller="Transactions" asp-action="Index">Invoices & Payments</a></li>
+                            <li><a asp-controller="Transactions" asp-action="Create">Record Payment</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a href="#">Financial Reports</a></li>
+                        </ul>
+                    </li>
+                }
+                
+                @* Nurse-specific menu items *@
+                @if (User.IsInRole("Nurse"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#nurseSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-heart-pulse"></i>
+                            <span>Nursing</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="nurseSubmenu">
+                            <li><a asp-controller="Nurses" asp-action="NursingNotes">Nursing Notes</a></li>
+                            <li><a asp-controller="Nurses" asp-action="PatientVitals">Patient Vitals</a></li>
+                            <li><a asp-controller="Nurses" asp-action="RecordVitals">Record Vitals</a></li>
+                            <li><a asp-controller="Nurses" asp-action="UpdatePatientProgress">Update Progress</a></li>
+                        </ul>
+                    </li>
+                }
+                
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#usersSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Users & Admin</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <ul class="collapse sidebar-submenu" id="usersSubmenu">
+                            <li><a asp-controller="Users" asp-action="Index">All Users</a></li>
+                            <li><a asp-controller="Users" asp-action="Create">Create User</a></li>
+                        </ul>
+                    </li>
+                }
             </ul>
         </nav>
 

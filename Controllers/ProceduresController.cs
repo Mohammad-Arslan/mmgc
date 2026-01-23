@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using MMGC.Data;
 using MMGC.Models;
 using MMGC.Services;
 using MMGC.Repositories;
@@ -15,6 +17,8 @@ public class ProceduresController : Controller
     private readonly IPatientService _patientService;
     private readonly IDoctorService _doctorService;
     private readonly IRepository<Nurse> _nurseRepository;
+    private readonly ApplicationDbContext _context;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<ProceduresController> _logger;
 
     public ProceduresController(
@@ -22,13 +26,37 @@ public class ProceduresController : Controller
         IPatientService patientService,
         IDoctorService doctorService,
         IRepository<Nurse> nurseRepository,
+        ApplicationDbContext context,
+        UserManager<ApplicationUser> userManager,
         ILogger<ProceduresController> logger)
     {
         _procedureService = procedureService;
         _patientService = patientService;
         _doctorService = doctorService;
         _nurseRepository = nurseRepository;
+        _context = context;
+        _userManager = userManager;
         _logger = logger;
+    }
+
+    // Helper to get current nurse
+    private async Task<Nurse?> GetCurrentNurseAsync()
+    {
+        if (!User.IsInRole("Nurse")) return null;
+        
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return null;
+
+        var nurse = await _context.Nurses
+            .FirstOrDefaultAsync(n => n.UserId == user.Id);
+        
+        if (nurse == null && !string.IsNullOrEmpty(user.Email))
+        {
+            var allNurses = await _nurseRepository.GetAllAsync();
+            nurse = allNurses.FirstOrDefault(n => n.Email?.ToLower() == user.Email.ToLower());
+        }
+
+        return nurse;
     }
 
     // Helper to populate dropdowns
@@ -194,8 +222,30 @@ public class ProceduresController : Controller
     // GET: Procedures
     public async Task<IActionResult> Index()
     {
-        var procedures = await _procedureService.GetAllProceduresAsync();
-        return View(procedures);
+        // If user is a nurse, show only assigned procedures
+        if (User.IsInRole("Nurse"))
+        {
+            var currentNurse = await GetCurrentNurseAsync();
+            if (currentNurse == null)
+            {
+                ViewBag.ErrorMessage = "Nurse profile not found. Please contact administrator to link your user account to a nurse profile.";
+                return View(new List<Procedure>());
+            }
+
+            var procedures = await _context.Procedures
+                .Include(p => p.Patient)
+                .Include(p => p.Doctor)
+                .Include(p => p.Nurse)
+                .Where(p => p.NurseId == currentNurse.Id)
+                .OrderByDescending(p => p.ProcedureDate)
+                .ToListAsync();
+            
+            return View(procedures);
+        }
+
+        // For Admin and other roles, show all procedures
+        var allProcedures = await _procedureService.GetAllProceduresAsync();
+        return View(allProcedures);
     }
 
     // GET: Procedures/Details/5

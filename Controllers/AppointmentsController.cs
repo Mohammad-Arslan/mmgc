@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using MMGC.Data;
 using MMGC.Models;
 using MMGC.Services;
 using MMGC.Repositories;
@@ -15,6 +17,8 @@ public class AppointmentsController : Controller
     private readonly IPatientService _patientService;
     private readonly IDoctorService _doctorService;
     private readonly IRepository<Nurse> _nurseRepository;
+    private readonly ApplicationDbContext _context;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<AppointmentsController> _logger;
 
     public AppointmentsController(
@@ -22,20 +26,66 @@ public class AppointmentsController : Controller
         IPatientService patientService,
         IDoctorService doctorService,
         IRepository<Nurse> nurseRepository,
+        ApplicationDbContext context,
+        UserManager<ApplicationUser> userManager,
         ILogger<AppointmentsController> logger)
     {
         _appointmentService = appointmentService;
         _patientService = patientService;
         _doctorService = doctorService;
         _nurseRepository = nurseRepository;
+        _context = context;
+        _userManager = userManager;
         _logger = logger;
+    }
+
+    // Helper to get current nurse
+    private async Task<Nurse?> GetCurrentNurseAsync()
+    {
+        if (!User.IsInRole("Nurse")) return null;
+        
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return null;
+
+        var nurse = await _context.Nurses
+            .FirstOrDefaultAsync(n => n.UserId == user.Id);
+        
+        if (nurse == null && !string.IsNullOrEmpty(user.Email))
+        {
+            var allNurses = await _nurseRepository.GetAllAsync();
+            nurse = allNurses.FirstOrDefault(n => n.Email?.ToLower() == user.Email.ToLower());
+        }
+
+        return nurse;
     }
 
     // GET: Appointments
     public async Task<IActionResult> Index()
     {
-        var appointments = await _appointmentService.GetAllAppointmentsAsync();
-        return View(appointments);
+        // If user is a nurse, show only assigned appointments
+        if (User.IsInRole("Nurse"))
+        {
+            var currentNurse = await GetCurrentNurseAsync();
+            if (currentNurse == null)
+            {
+                ViewBag.ErrorMessage = "Nurse profile not found. Please contact administrator to link your user account to a nurse profile.";
+                return View(new List<Appointment>());
+            }
+
+            var appointments = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor)
+                .Include(a => a.Nurse)
+                .Where(a => a.NurseId == currentNurse.Id)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ToListAsync();
+            
+            return View(appointments);
+        }
+
+        // For Admin and other roles, show all appointments
+        var allAppointments = await _appointmentService.GetAllAppointmentsAsync();
+        return View(allAppointments);
     }
 
     // GET: Appointments/Details/5

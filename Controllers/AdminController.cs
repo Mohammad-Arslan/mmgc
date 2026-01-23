@@ -4,7 +4,7 @@ using MMGC.Services;
 
 namespace MMGC.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class AdminController : Controller
 {
     private readonly IDashboardService _dashboardService;

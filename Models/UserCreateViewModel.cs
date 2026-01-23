@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MMGC.Models;
 
@@ -41,5 +42,32 @@ public class UserCreateViewModel
 
     [Display(Name = "Email Confirmed")]
     public bool EmailConfirmed { get; set; } = true;
+
+    // Doctor-specific fields
+    [Display(Name = "Specialization")]
+    [StringLength(100)]
+    public string? Specialization { get; set; }
+
+    [Display(Name = "License Number")]
+    [StringLength(50)]
+    public string? LicenseNumber { get; set; }
+
+    [Display(Name = "Consultation Fee")]
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? ConsultationFee { get; set; }
+
+    [Display(Name = "Address")]
+    [StringLength(500)]
+    public string? Address { get; set; }
+
+    // Nurse-specific fields
+    [Display(Name = "Department")]
+    [StringLength(100)]
+    public string? Department { get; set; }
+
+    // Staff-specific fields (ReceptionStaff, AccountsStaff, LabStaff)
+    [Display(Name = "Employee ID")]
+    [StringLength(50)]
+    public string? EmployeeId { get; set; }
 }
 

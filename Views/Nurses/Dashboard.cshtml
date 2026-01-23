@@ -1,0 +1,169 @@
+@{
+    ViewData["Title"] = "Nurses Dashboard";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var nurse = ViewBag.Nurse as MMGC.Models.Nurse;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-speedometer2"></i> Nurses Dashboard</h2>
+            <p>Welcome@(nurse != null ? $", {nurse.FullName}" : "") - Nursing Management Overview</p>
+        </div>
+    </div>
+</div>
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> @ViewBag.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Overview Cards -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Today's Notes</p>
+                    <h2 class="mb-0 fw-bold">@(ViewBag.TodayNotes ?? 0)</h2>
+                    <small class="text-info"><i class="bi bi-clipboard"></i> Recorded Today</small>
+                </div>
+                <div class="dashboard-icon icon-primary">
+                    <i class="bi bi-file-text"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">My Procedures</p>
+                    <h2 class="mb-0 fw-bold">@(ViewBag.MyProcedures ?? 0)</h2>
+                    <small class="text-success"><i class="bi bi-clipboard-pulse"></i> Assigned</small>
+                </div>
+                <div class="dashboard-icon icon-success">
+                    <i class="bi bi-clipboard-pulse"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">My Notes</p>
+                    <h2 class="mb-0 fw-bold">@(ViewBag.MyNotes ?? 0)</h2>
+                    <small class="text-info"><i class="bi bi-file-text"></i> Total</small>
+                </div>
+                <div class="dashboard-icon icon-info">
+                    <i class="bi bi-file-text"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Vitals Recorded</p>
+                    <h2 class="mb-0 fw-bold">@(ViewBag.MyVitals ?? 0)</h2>
+                    <small class="text-warning"><i class="bi bi-heart-pulse"></i> Total</small>
+                </div>
+                <div class="dashboard-icon icon-warning">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="RecordVitals" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-heart-pulse"></i><br>
+                            Record Vitals
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="CreateNursingNote" class="btn btn-outline-success w-100">
+                            <i class="bi bi-file-text"></i><br>
+                            Create Note
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="NursingNotes" class="btn btn-outline-info w-100">
+                            <i class="bi bi-clipboard"></i><br>
+                            View Notes
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="PatientVitals" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-graph-up"></i><br>
+                            View Vitals
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clipboard"></i> Recent Nursing Notes</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Recent nursing notes will appear here once created.
+                </div>
+                <a asp-action="NursingNotes" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View All Notes
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Recent Vitals</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Recent patient vitals will appear here once recorded.
+                </div>
+                <a asp-action="PatientVitals" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View All Vitals
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh dashboard every 5 minutes
+        setTimeout(function() {
+            location.reload();
+        }, 300000);
+    </script>
+}
