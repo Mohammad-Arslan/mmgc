@@ -1,0 +1,329 @@
+@{
+    ViewData["Title"] = "Accounts Dashboard";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-speedometer2"></i> Accounts Dashboard</h2>
+            <p>Financial Management Overview</p>
+        </div>
+    </div>
+</div>
+
+<!-- Overview Cards -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Total Revenue</p>
+                    <h2 class="mb-0 fw-bold">PKR @(((decimal)(ViewBag.TotalAmount ?? 0)).ToString("N2")))</h2>
+                    <small class="text-success"><i class="bi bi-cash-coin"></i> All Time</small>
+                </div>
+                <div class="dashboard-icon icon-success">
+                    <i class="bi bi-cash-coin"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Today's Revenue</p>
+                    <h2 class="mb-0 fw-bold">PKR @(((decimal)(ViewBag.TodayAmount ?? 0)).ToString("N2")))</h2>
+                    <small class="text-primary"><i class="bi bi-calendar-day"></i> Today</small>
+                </div>
+                <div class="dashboard-icon icon-primary">
+                    <i class="bi bi-calendar-day"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Monthly Revenue</p>
+                    <h2 class="mb-0 fw-bold">PKR @(((decimal)(ViewBag.MonthAmount ?? 0)).ToString("N2")))</h2>
+                    <small class="text-info"><i class="bi bi-calendar-month"></i> This Month</small>
+                </div>
+                <div class="dashboard-icon icon-info">
+                    <i class="bi bi-calendar-month"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Pending Payments</p>
+                    <h2 class="mb-0 fw-bold">@(ViewBag.PendingPayments ?? 0)</h2>
+                    <small class="text-warning"><i class="bi bi-hourglass-split"></i> PKR @(((decimal)(ViewBag.PendingAmount ?? 0)).ToString("N2")))</small>
+                </div>
+                <div class="dashboard-icon icon-warning">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Total Transactions</p>
+                    <h2 class="mb-0 fw-bold">@(ViewBag.TotalTransactions ?? 0)</h2>
+                    <small class="text-secondary"><i class="bi bi-receipt"></i> All Time</small>
+                </div>
+                <div class="dashboard-icon icon-secondary">
+                    <i class="bi bi-receipt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Today's Transactions</p>
+                    <h2 class="mb-0 fw-bold">@(ViewBag.TodayTransactions ?? 0)</h2>
+                    <small class="text-primary"><i class="bi bi-calendar-day"></i> Today</small>
+                </div>
+                <div class="dashboard-icon icon-primary">
+                    <i class="bi bi-calendar-day"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Monthly Transactions</p>
+                    <h2 class="mb-0 fw-bold">@(ViewBag.MonthTransactions ?? 0)</h2>
+                    <small class="text-info"><i class="bi bi-calendar-month"></i> This Month</small>
+                </div>
+                <div class="dashboard-icon icon-info">
+                    <i class="bi bi-calendar-month"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="Create" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-plus-circle"></i><br>
+                            Record Payment
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="Index" class="btn btn-outline-info w-100">
+                            <i class="bi bi-list-ul"></i><br>
+                            All Transactions
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="FinancialReports" class="btn btn-outline-success w-100">
+                            <i class="bi bi-file-earmark-text"></i><br>
+                            Financial Reports
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="Index" asp-route-status="Pending" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-hourglass-split"></i><br>
+                            Pending Payments
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Mode Breakdown (Today) -->
+@{
+    var paymentModeBreakdown = ViewBag.PaymentModeBreakdown as dynamic;
+}
+@if (paymentModeBreakdown != null && ((IEnumerable<dynamic>)paymentModeBreakdown).Any())
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Today's Payment Mode Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (var item in (IEnumerable<dynamic>)paymentModeBreakdown)
+                        {
+                            <div class="col-md-3 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-muted">@item.Mode</h6>
+                                        <h4 class="mb-0">PKR @(((decimal)item.Amount).ToString("N2"))</h4>
+                                        <small class="text-muted">@item.Count transaction(s)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Recent Activities -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> Pending Payments</h5>
+                <a asp-action="Index" asp-route-status="Pending" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View All
+                </a>
+            </div>
+            <div class="card-body">
+                @{
+                    var pendingTransactions = ViewBag.PendingTransactions as IEnumerable<MMGC.Models.Transaction>;
+                }
+                @if (pendingTransactions != null && pendingTransactions.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var transaction in pendingTransactions)
+                        {
+                            <div class="list-group-item px-0 py-2 border-0 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <div class="avatar-circle bg-warning text-white me-2" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem;">
+                                                @(transaction.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
+                                            </div>
+                                            <strong class="me-2">@transaction.Description</strong>
+                                            <span class="badge bg-warning">@transaction.Status</span>
+                                        </div>
+                                        <p class="text-muted mb-1 small">
+                                            <i class="bi bi-person"></i> @(transaction.Patient?.FullName ?? "Unknown Patient")
+                                        </p>
+                                        <p class="text-muted mb-0 small">
+                                            <i class="bi bi-calendar-event"></i> @transaction.TransactionDate.ToString("dd MMM yyyy HH:mm") | 
+                                            <i class="bi bi-cash-coin"></i> PKR @transaction.Amount.ToString("N2")
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <a asp-action="Details" asp-route-id="@transaction.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No pending payments.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Transactions</h5>
+                <a asp-action="Index" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View All
+                </a>
+            </div>
+            <div class="card-body">
+                @{
+                    var recentTransactions = ViewBag.RecentTransactions as IEnumerable<MMGC.Models.Transaction>;
+                }
+                @if (recentTransactions != null && recentTransactions.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var transaction in recentTransactions)
+                        {
+                            <div class="list-group-item px-0 py-2 border-0 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <div class="avatar-circle bg-success text-white me-2" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem;">
+                                                @(transaction.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
+                                            </div>
+                                            <strong class="me-2">@transaction.Description</strong>
+                                            @{
+                                                var statusClass = transaction.Status switch
+                                                {
+                                                    "Completed" => "bg-success",
+                                                    "Pending" => "bg-warning",
+                                                    "Refunded" => "bg-danger",
+                                                    "Cancelled" => "bg-secondary",
+                                                    _ => "bg-secondary"
+                                                };
+                                            }
+                                            <span class="badge @statusClass">@transaction.Status</span>
+                                        </div>
+                                        <p class="text-muted mb-1 small">
+                                            <i class="bi bi-person"></i> @(transaction.Patient?.FullName ?? "Unknown Patient")
+                                        </p>
+                                        <p class="text-muted mb-0 small">
+                                            <i class="bi bi-calendar-event"></i> @transaction.TransactionDate.ToString("dd MMM yyyy HH:mm") | 
+                                            <i class="bi bi-cash-coin"></i> PKR @transaction.Amount.ToString("N2") | 
+                                            <i class="bi bi-credit-card"></i> @transaction.PaymentMode
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <a asp-action="Details" asp-route-id="@transaction.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No recent transactions found.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh dashboard every 5 minutes
+        setTimeout(function() {
+            location.reload();
+        }, 300000);
+    </script>
+}

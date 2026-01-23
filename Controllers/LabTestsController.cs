@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using MMGC.Models;
 using MMGC.Services;
 using MMGC.Repositories;
+using MMGC.Data;
 
 namespace MMGC.Controllers;
 
@@ -14,17 +15,20 @@ public class LabTestsController : Controller
     private readonly ILabTestService _labTestService;
     private readonly IPatientService _patientService;
     private readonly IProcedureService _procedureService;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<LabTestsController> _logger;
 
     public LabTestsController(
         ILabTestService labTestService,
         IPatientService patientService,
         IProcedureService procedureService,
+        ApplicationDbContext context,
         ILogger<LabTestsController> logger)
     {
         _labTestService = labTestService;
         _patientService = patientService;
         _procedureService = procedureService;
+        _context = context;
         _logger = logger;
     }
 
@@ -43,6 +47,49 @@ public class LabTestsController : Controller
         ViewBag.PatientsList = patients;
         ViewBag.CategoriesList = categories;
         ViewBag.ProceduresList = procedures;
+    }
+
+    // GET: LabTests/Dashboard
+    public async Task<IActionResult> Dashboard()
+    {
+        var today = DateTime.Today;
+        var todayEnd = today.AddDays(1);
+
+        // Get statistics
+        var totalTests = await _context.LabTests.CountAsync();
+        var pendingTests = await _context.LabTests.CountAsync(t => t.Status == "Pending");
+        var inProgressTests = await _context.LabTests.CountAsync(t => t.Status == "In Progress" || t.Status == "Sample Collected");
+        var completedTests = await _context.LabTests.CountAsync(t => t.Status == "Completed");
+        var todayTests = await _context.LabTests.CountAsync(t => t.TestDate >= today && t.TestDate < todayEnd);
+        var pendingReports = await _context.LabTests.CountAsync(t => t.Status == "Completed" && string.IsNullOrEmpty(t.ReportFilePath));
+
+        // Get recent tests
+        var recentTests = await _context.LabTests
+            .Include(t => t.Patient)
+            .Include(t => t.LabTestCategory)
+            .OrderByDescending(t => t.TestDate)
+            .Take(5)
+            .ToListAsync();
+
+        // Get pending tests for queue
+        var pendingQueue = await _context.LabTests
+            .Include(t => t.Patient)
+            .Include(t => t.LabTestCategory)
+            .Where(t => t.Status == "Pending" || t.Status == "Sample Collected")
+            .OrderBy(t => t.TestDate)
+            .Take(5)
+            .ToListAsync();
+
+        ViewBag.TotalTests = totalTests;
+        ViewBag.PendingTests = pendingTests;
+        ViewBag.InProgressTests = inProgressTests;
+        ViewBag.CompletedTests = completedTests;
+        ViewBag.TodayTests = todayTests;
+        ViewBag.PendingReports = pendingReports;
+        ViewBag.RecentTests = recentTests;
+        ViewBag.PendingQueue = pendingQueue;
+
+        return View();
     }
 
     // GET: LabTests

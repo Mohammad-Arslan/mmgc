@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MMGC.Models;
 using MMGC.Services;
+using MMGC.Data;
 
 namespace MMGC.Controllers;
 
@@ -15,6 +16,7 @@ public class TransactionsController : Controller
     private readonly IAppointmentService _appointmentService;
     private readonly IProcedureService _procedureService;
     private readonly ILabTestService _labTestService;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<TransactionsController> _logger;
 
     public TransactionsController(
@@ -23,6 +25,7 @@ public class TransactionsController : Controller
         IAppointmentService appointmentService,
         IProcedureService procedureService,
         ILabTestService labTestService,
+        ApplicationDbContext context,
         ILogger<TransactionsController> logger)
     {
         _transactionService = transactionService;
@@ -30,6 +33,7 @@ public class TransactionsController : Controller
         _appointmentService = appointmentService;
         _procedureService = procedureService;
         _labTestService = labTestService;
+        _context = context;
         _logger = logger;
     }
 
@@ -167,6 +171,292 @@ public class TransactionsController : Controller
             _logger.LogError(ex, "Error getting patient records for patient {PatientId}", patientId);
             return Json(new { success = false, message = ex.Message });
         }
+    }
+
+    // GET: Transactions/Dashboard
+    public async Task<IActionResult> Dashboard()
+    {
+        var today = DateTime.Today;
+        var todayEnd = today.AddDays(1);
+        var monthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var monthEnd = monthStart.AddMonths(1);
+
+        // Get statistics
+        var totalTransactions = await _context.Transactions.CountAsync();
+        var todayTransactions = await _context.Transactions
+            .CountAsync(t => t.TransactionDate >= today && t.TransactionDate < todayEnd);
+        var monthTransactions = await _context.Transactions
+            .CountAsync(t => t.TransactionDate >= monthStart && t.TransactionDate < monthEnd);
+        
+        var totalAmount = await _context.Transactions
+            .Where(t => t.Status == "Completed")
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+        
+        var todayAmount = await _context.Transactions
+            .Where(t => t.Status == "Completed" && t.TransactionDate >= today && t.TransactionDate < todayEnd)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+        
+        var monthAmount = await _context.Transactions
+            .Where(t => t.Status == "Completed" && t.TransactionDate >= monthStart && t.TransactionDate < monthEnd)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+        
+        var pendingPayments = await _context.Transactions
+            .Where(t => t.Status == "Pending")
+            .CountAsync();
+        
+        var pendingAmount = await _context.Transactions
+            .Where(t => t.Status == "Pending")
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+
+        // Get recent transactions
+        var recentTransactions = await _context.Transactions
+            .Include(t => t.Patient)
+            .OrderByDescending(t => t.TransactionDate)
+            .Take(5)
+            .ToListAsync();
+
+        // Get pending transactions
+        var pendingTransactions = await _context.Transactions
+            .Include(t => t.Patient)
+            .Where(t => t.Status == "Pending")
+            .OrderBy(t => t.TransactionDate)
+            .Take(5)
+            .ToListAsync();
+
+        // Payment mode breakdown for today
+        var paymentModeBreakdown = await _context.Transactions
+            .Where(t => t.Status == "Completed" && t.TransactionDate >= today && t.TransactionDate < todayEnd)
+            .GroupBy(t => t.PaymentMode)
+            .Select(g => new { Mode = g.Key, Amount = g.Sum(t => t.Amount), Count = g.Count() })
+            .ToListAsync();
+
+        ViewBag.TotalTransactions = totalTransactions;
+        ViewBag.TodayTransactions = todayTransactions;
+        ViewBag.MonthTransactions = monthTransactions;
+        ViewBag.TotalAmount = totalAmount;
+        ViewBag.TodayAmount = todayAmount;
+        ViewBag.MonthAmount = monthAmount;
+        ViewBag.PendingPayments = pendingPayments;
+        ViewBag.PendingAmount = pendingAmount;
+        ViewBag.RecentTransactions = recentTransactions;
+        ViewBag.PendingTransactions = pendingTransactions;
+        ViewBag.PaymentModeBreakdown = paymentModeBreakdown;
+
+        return View();
+    }
+
+    // GET: Transactions/FinancialReports
+    public async Task<IActionResult> FinancialReports(DateTime? startDate, DateTime? endDate, string? paymentMode, string? transactionType)
+    {
+        var query = _context.Transactions
+            .Include(t => t.Patient)
+            .Include(t => t.Appointment)
+            .Include(t => t.Procedure)
+            .Include(t => t.LabTest)
+            .Where(t => t.Status == "Completed")
+            .AsQueryable();
+
+        // Apply filters
+        if (startDate.HasValue)
+        {
+            query = query.Where(t => t.TransactionDate >= startDate.Value);
+        }
+        else
+        {
+            // Default to current month
+            var monthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            query = query.Where(t => t.TransactionDate >= monthStart);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(t => t.TransactionDate <= endDate.Value.AddDays(1));
+        }
+
+        if (!string.IsNullOrEmpty(paymentMode))
+        {
+            query = query.Where(t => t.PaymentMode == paymentMode);
+        }
+
+        if (!string.IsNullOrEmpty(transactionType))
+        {
+            query = query.Where(t => t.TransactionType == transactionType);
+        }
+
+        var transactions = await query.OrderByDescending(t => t.TransactionDate).ToListAsync();
+
+        // Calculate summary statistics
+        var totalAmount = transactions.Sum(t => t.Amount);
+        var totalCount = transactions.Count;
+        
+        var paymentModeSummary = transactions
+            .GroupBy(t => t.PaymentMode)
+            .Select(g => new { Mode = g.Key, Amount = g.Sum(t => t.Amount), Count = g.Count() })
+            .ToList();
+        
+        var transactionTypeSummary = transactions
+            .GroupBy(t => t.TransactionType)
+            .Select(g => new { Type = g.Key, Amount = g.Sum(t => t.Amount), Count = g.Count() })
+            .ToList();
+
+        ViewBag.StartDate = startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        ViewBag.EndDate = endDate ?? DateTime.Now;
+        ViewBag.PaymentMode = paymentMode;
+        ViewBag.TransactionType = transactionType;
+        ViewBag.TotalAmount = totalAmount;
+        ViewBag.TotalCount = totalCount;
+        ViewBag.PaymentModeSummary = paymentModeSummary;
+        ViewBag.TransactionTypeSummary = transactionTypeSummary;
+
+        return View(transactions);
+    }
+
+    // GET: Transactions/ExportFinancialReport
+    public async Task<IActionResult> ExportFinancialReport(string format, DateTime? startDate, DateTime? endDate, string? paymentMode, string? transactionType)
+    {
+        var query = _context.Transactions
+            .Include(t => t.Patient)
+            .Include(t => t.Appointment)
+            .Include(t => t.Procedure)
+            .Include(t => t.LabTest)
+            .Where(t => t.Status == "Completed")
+            .AsQueryable();
+
+        // Apply filters (same as FinancialReports)
+        if (startDate.HasValue)
+        {
+            query = query.Where(t => t.TransactionDate >= startDate.Value);
+        }
+        else
+        {
+            var monthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            query = query.Where(t => t.TransactionDate >= monthStart);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(t => t.TransactionDate <= endDate.Value.AddDays(1));
+        }
+
+        if (!string.IsNullOrEmpty(paymentMode))
+        {
+            query = query.Where(t => t.PaymentMode == paymentMode);
+        }
+
+        if (!string.IsNullOrEmpty(transactionType))
+        {
+            query = query.Where(t => t.TransactionType == transactionType);
+        }
+
+        var transactions = await query.OrderByDescending(t => t.TransactionDate).ToListAsync();
+        var totalAmount = transactions.Sum(t => t.Amount);
+
+        if (format?.ToLower() == "excel" || format?.ToLower() == "csv")
+        {
+            // Generate CSV/Excel file
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("Financial Report - MMGC Hospital");
+            csv.AppendLine($"Date Range: {(startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)):dd MMM yyyy} - {(endDate ?? DateTime.Now):dd MMM yyyy}");
+            csv.AppendLine($"Total Transactions: {transactions.Count}");
+            csv.AppendLine($"Total Amount: PKR {totalAmount:N2}");
+            csv.AppendLine();
+            csv.AppendLine("Date,Patient,Description,Type,Payment Mode,Amount,Status");
+            
+            foreach (var t in transactions)
+            {
+                csv.AppendLine($"{t.TransactionDate:dd MMM yyyy HH:mm},\"{t.Patient?.FullName ?? "N/A"}\",\"{t.Description}\",{t.TransactionType},{t.PaymentMode},{t.Amount:N2},{t.Status}");
+            }
+            
+            csv.AppendLine();
+            csv.AppendLine($"Total,{totalAmount:N2}");
+
+            var fileName = $"FinancialReport_{DateTime.Now:yyyyMMddHHmmss}.csv";
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", fileName);
+        }
+        else
+        {
+            // Generate PDF (HTML format that can be printed to PDF)
+            var html = GenerateFinancialReportHtml(transactions, startDate, endDate, paymentMode, transactionType, totalAmount);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(html);
+            var fileName = $"FinancialReport_{DateTime.Now:yyyyMMddHHmmss}.html";
+            return File(bytes, "text/html", fileName);
+        }
+    }
+
+    private string GenerateFinancialReportHtml(IEnumerable<Transaction> transactions, DateTime? startDate, DateTime? endDate, string? paymentMode, string? transactionType, decimal totalAmount)
+    {
+        var html = new System.Text.StringBuilder();
+        html.AppendLine("<!DOCTYPE html>");
+        html.AppendLine("<html>");
+        html.AppendLine("<head>");
+        html.AppendLine("<meta charset='utf-8'>");
+        html.AppendLine("<title>Financial Report - MMGC Hospital</title>");
+        html.AppendLine("<style>");
+        html.AppendLine("body { font-family: Arial, sans-serif; margin: 20px; }");
+        html.AppendLine("h1 { color: #667eea; }");
+        html.AppendLine("h2 { color: #764ba2; margin-top: 20px; }");
+        html.AppendLine("table { width: 100%; border-collapse: collapse; margin-top: 20px; }");
+        html.AppendLine("th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px; text-align: left; }");
+        html.AppendLine("td { padding: 10px; border-bottom: 1px solid #ddd; }");
+        html.AppendLine("tr:nth-child(even) { background-color: #f9f9f9; }");
+        html.AppendLine(".summary { background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; }");
+        html.AppendLine(".total-row { font-weight: bold; background-color: #e8e8e8; }");
+        html.AppendLine("@media print { body { margin: 0; } }");
+        html.AppendLine("</style>");
+        html.AppendLine("</head>");
+        html.AppendLine("<body>");
+        html.AppendLine("<h1>MMGC Hospital - Financial Report</h1>");
+        html.AppendLine($"<div class='summary'>");
+        html.AppendLine($"<p><strong>Date Range:</strong> {(startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)):dd MMM yyyy} - {(endDate ?? DateTime.Now):dd MMM yyyy}</p>");
+        if (!string.IsNullOrEmpty(paymentMode))
+            html.AppendLine($"<p><strong>Payment Mode:</strong> {paymentMode}</p>");
+        if (!string.IsNullOrEmpty(transactionType))
+            html.AppendLine($"<p><strong>Transaction Type:</strong> {transactionType}</p>");
+        html.AppendLine($"<p><strong>Total Transactions:</strong> {transactions.Count()}</p>");
+        html.AppendLine($"<p><strong>Total Amount:</strong> PKR {totalAmount:N2}</p>");
+        html.AppendLine("</div>");
+        
+        html.AppendLine("<table>");
+        html.AppendLine("<thead>");
+        html.AppendLine("<tr>");
+        html.AppendLine("<th>Date</th>");
+        html.AppendLine("<th>Patient</th>");
+        html.AppendLine("<th>Description</th>");
+        html.AppendLine("<th>Type</th>");
+        html.AppendLine("<th>Payment Mode</th>");
+        html.AppendLine("<th>Amount</th>");
+        html.AppendLine("<th>Status</th>");
+        html.AppendLine("</tr>");
+        html.AppendLine("</thead>");
+        html.AppendLine("<tbody>");
+        
+        foreach (var t in transactions)
+        {
+            html.AppendLine("<tr>");
+            html.AppendLine($"<td>{t.TransactionDate:dd MMM yyyy HH:mm}</td>");
+            html.AppendLine($"<td>{t.Patient?.FullName ?? "N/A"}</td>");
+            html.AppendLine($"<td>{t.Description}</td>");
+            html.AppendLine($"<td>{t.TransactionType}</td>");
+            html.AppendLine($"<td>{t.PaymentMode}</td>");
+            html.AppendLine($"<td>PKR {t.Amount:N2}</td>");
+            html.AppendLine($"<td>{t.Status}</td>");
+            html.AppendLine("</tr>");
+        }
+        
+        html.AppendLine("<tr class='total-row'>");
+        html.AppendLine("<td colspan='5'><strong>Total:</strong></td>");
+        html.AppendLine($"<td><strong>PKR {totalAmount:N2}</strong></td>");
+        html.AppendLine("<td></td>");
+        html.AppendLine("</tr>");
+        html.AppendLine("</tbody>");
+        html.AppendLine("</table>");
+        
+        html.AppendLine($"<p style='margin-top: 30px; font-size: 12px; color: #666;'>Generated on: {DateTime.Now:dd MMM yyyy HH:mm}</p>");
+        html.AppendLine("</body>");
+        html.AppendLine("</html>");
+        
+        return html.ToString();
     }
 
     // GET: Transactions

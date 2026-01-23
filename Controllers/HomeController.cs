@@ -69,11 +69,11 @@ public class HomeController : Controller
         }
         else if (roles.Contains("AccountsStaff"))
         {
-            return RedirectToAction("Index", "Transactions");
+            return RedirectToAction("Dashboard", "Transactions");
         }
         else if (roles.Contains("LabStaff"))
         {
-            return RedirectToAction("Index", "LabTests");
+            return RedirectToAction("Dashboard", "LabTests");
         }
         else if (roles.Contains("Patient"))
         {

@@ -110,9 +110,18 @@
                                 <td>
                                     @if (!string.IsNullOrEmpty(item.PatientProgress))
                                     {
-                                        <span class="badge bg-success">
-                                            <i class="bi bi-check-circle"></i> Updated
-                                        </span>
+                                        <button type="button" class="btn btn-sm btn-outline-success view-progress-btn" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#progressModal"
+                                                data-patient="@item.Patient?.FullName"
+                                                data-date="@item.NoteDate.ToString("dd MMM yyyy HH:mm")"
+                                                data-progress="@item.PatientProgress"
+                                                data-notes="@item.Notes"
+                                                data-medications="@item.MedicationsAdministered"
+                                                data-procedure="@item.Procedure?.ProcedureName">
+                                            <i class="bi bi-clipboard-check"></i> 
+                                            @(item.PatientProgress.Length > 30 ? item.PatientProgress.Substring(0, 30) + "..." : item.PatientProgress)
+                                        </button>
                                     }
                                     else
                                     {
@@ -163,6 +172,36 @@
                 $("table tbody tr").filter(function() {
                     $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
                 });
+            });
+
+            // Populate progress modal
+            $(document).on("click", ".view-progress-btn", function() {
+                const btn = $(this);
+                
+                $("#mPatientName").text(btn.data("patient") || "Unknown Patient");
+                $("#mProgressDate").text(btn.data("date"));
+                $("#mProgress").text(btn.data("progress") || "");
+                
+                if (btn.data("procedure")) {
+                    $("#mProcedureName").text(btn.data("procedure"));
+                    $("#mProcedureWrap").show();
+                } else {
+                    $("#mProcedureWrap").hide();
+                }
+                
+                if (btn.data("notes")) {
+                    $("#mNotes").text(btn.data("notes"));
+                    $("#mNotesWrap").show();
+                } else {
+                    $("#mNotesWrap").hide();
+                }
+                
+                if (btn.data("medications")) {
+                    $("#mMedications").text(btn.data("medications"));
+                    $("#mMedicationsWrap").show();
+                } else {
+                    $("#mMedicationsWrap").hide();
+                }
             });
         });
     </script>

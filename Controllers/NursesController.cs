@@ -143,6 +143,48 @@ public class NursesController : Controller
                 .CountAsync();
         }
 
+        // Fetch recent notes and vitals for dashboard display
+        var recentNotes = new List<Models.NursingNote>();
+        var recentVitals = new List<Models.PatientVital>();
+        
+        if (currentNurse != null)
+        {
+            recentNotes = await _context.NursingNotes
+                .Include(n => n.Patient)
+                .Include(n => n.Procedure)
+                .Include(n => n.Nurse)
+                .Where(n => n.NurseId == currentNurse.Id)
+                .OrderByDescending(n => n.NoteDate)
+                .Take(5)
+                .ToListAsync();
+            
+            recentVitals = await _context.PatientVitals
+                .Include(v => v.Patient)
+                .Include(v => v.Nurse)
+                .Where(v => v.NurseId == currentNurse.Id)
+                .OrderByDescending(v => v.RecordedDate)
+                .Take(5)
+                .ToListAsync();
+        }
+        else if (User.IsInRole("Admin"))
+        {
+            // Admin sees all recent notes and vitals
+            recentNotes = await _context.NursingNotes
+                .Include(n => n.Patient)
+                .Include(n => n.Procedure)
+                .Include(n => n.Nurse)
+                .OrderByDescending(n => n.NoteDate)
+                .Take(5)
+                .ToListAsync();
+            
+            recentVitals = await _context.PatientVitals
+                .Include(v => v.Patient)
+                .Include(v => v.Nurse)
+                .OrderByDescending(v => v.RecordedDate)
+                .Take(5)
+                .ToListAsync();
+        }
+
         ViewBag.Nurse = currentNurse;
         ViewBag.ActiveNurses = activeNurses;
         ViewBag.TotalProcedures = totalProcedures;
@@ -150,6 +192,8 @@ public class NursesController : Controller
         ViewBag.MyProcedures = myProcedures;
         ViewBag.MyNotes = myNotes;
         ViewBag.MyVitals = myVitals;
+        ViewBag.RecentNotes = recentNotes;
+        ViewBag.RecentVitals = recentVitals;
 
         return View();
     }
@@ -671,6 +715,12 @@ public class NursesController : Controller
 
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Patient progress updated successfully!";
+            
+            // Redirect back to procedure if accessed from there, otherwise to nursing notes
+            if (note.ProcedureId.HasValue)
+            {
+                return RedirectToAction("Details", "Procedures", new { id = note.ProcedureId });
+            }
             return RedirectToAction(nameof(NursingNotes), new { patientId = note.PatientId, procedureId = note.ProcedureId });
         }
 

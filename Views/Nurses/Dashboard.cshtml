@@ -128,32 +128,126 @@
 <div class="row">
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-clipboard"></i> Recent Nursing Notes</h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> Recent nursing notes will appear here once created.
-                </div>
                 <a asp-action="NursingNotes" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-eye"></i> View All Notes
                 </a>
+            </div>
+            <div class="card-body">
+                @{
+                    var recentNotes = ViewBag.RecentNotes as IEnumerable<MMGC.Models.NursingNote>;
+                }
+                @if (recentNotes != null && recentNotes.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var note in recentNotes)
+                        {
+                            <div class="list-group-item px-0 py-2 border-0 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <div class="avatar-circle bg-primary text-white me-2" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem;">
+                                                @(note.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
+                                            </div>
+                                            <strong class="me-2">@(note.Patient?.FullName ?? "Unknown Patient")</strong>
+                                            @if (note.Procedure != null)
+                                            {
+                                                <span class="badge bg-secondary">@note.Procedure.ProcedureName</span>
+                                            }
+                                        </div>
+                                        <p class="text-muted mb-1 small">
+                                            <i class="bi bi-calendar-event"></i> @note.NoteDate.ToString("dd MMM yyyy HH:mm")
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(note.Notes))
+                                        {
+                                            <p class="mb-0 small text-truncate" style="max-width: 100%;">
+                                                @(note.Notes.Length > 80 ? note.Notes.Substring(0, 80) + "..." : note.Notes)
+                                            </p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No recent nursing notes found.
+                    </div>
+                }
             </div>
         </div>
     </div>
     
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Recent Vitals</h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> Recent patient vitals will appear here once recorded.
-                </div>
                 <a asp-action="PatientVitals" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-eye"></i> View All Vitals
                 </a>
+            </div>
+            <div class="card-body">
+                @{
+                    var recentVitals = ViewBag.RecentVitals as IEnumerable<MMGC.Models.PatientVital>;
+                }
+                @if (recentVitals != null && recentVitals.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var vital in recentVitals)
+                        {
+                            <div class="list-group-item px-0 py-2 border-0 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <div class="avatar-circle bg-danger text-white me-2" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem;">
+                                                @(vital.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
+                                            </div>
+                                            <strong class="me-2">@(vital.Patient?.FullName ?? "Unknown Patient")</strong>
+                                        </div>
+                                        <p class="text-muted mb-1 small">
+                                            <i class="bi bi-calendar-event"></i> @vital.RecordedDate.ToString("dd MMM yyyy HH:mm")
+                                        </p>
+                                        <div class="d-flex flex-wrap gap-2 small">
+                                            @if (vital.BloodPressureSystolic.HasValue)
+                                            {
+                                                <span class="badge bg-primary">
+                                                    <i class="bi bi-heart-pulse"></i> BP: @vital.BloodPressureSystolic/@vital.BloodPressureDiastolic
+                                                </span>
+                                            }
+                                            @if (vital.Temperature.HasValue)
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-thermometer-half"></i> @vital.Temperature.Value.ToString("F1")°F
+                                                </span>
+                                            }
+                                            @if (vital.Pulse.HasValue)
+                                            {
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-activity"></i> Pulse: @vital.Pulse
+                                                </span>
+                                            }
+                                            @if (vital.OxygenSaturation.HasValue)
+                                            {
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-lungs"></i> SpO₂: @vital.OxygenSaturation%
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No recent vitals found.
+                    </div>
+                }
             </div>
         </div>
     </div>

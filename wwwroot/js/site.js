@@ -1,4 +1,4 @@
-﻿// Sidebar Toggle Functionality
+// Sidebar Toggle Functionality
 $(document).ready(function () {
     $('#sidebarCollapse').on('click', function () {
         $('#sidebar').toggleClass('active');
@@ -28,8 +28,8 @@ $(document).ready(function () {
     // Add animation to cards on page load
     $('.card, .dashboard-card').addClass('fade-in');
 
-    // Smooth scroll for anchor links
-    $('a[href^="#"]').on('click', function (e) {
+    // Smooth scroll for anchor links (only for actual anchor links, not menu toggles)
+    $('a[href^="#"]:not([data-bs-toggle])').on('click', function (e) {
         var target = $(this.hash);
         if (target.length) {
             e.preventDefault();

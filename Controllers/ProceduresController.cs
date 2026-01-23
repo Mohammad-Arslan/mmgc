@@ -87,6 +87,7 @@ public class ProceduresController : Controller
     }
 
     // GET: Procedures/Create
+    [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> Create()
     {
         await PopulateDropDownsAsync();
@@ -100,6 +101,7 @@ public class ProceduresController : Controller
     // POST: Procedures/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> Create(Procedure procedure)
     {
         _logger.LogDebug("Create POST called. PatientId={PatientId}, DoctorId={DoctorId}", procedure.PatientId, procedure.DoctorId);
@@ -160,6 +162,7 @@ public class ProceduresController : Controller
     }
 
     // GET: Procedures/Edit/5
+    [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -174,6 +177,7 @@ public class ProceduresController : Controller
     // POST: Procedures/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> Edit(int id, Procedure procedure)
     {
         if (id != procedure.Id) return NotFound();
@@ -272,12 +276,23 @@ public class ProceduresController : Controller
             return NotFound();
         }
 
+        // Get related nursing notes with patient progress for this procedure
+        var nursingNotes = await _context.NursingNotes
+            .Include(n => n.Patient)
+            .Include(n => n.Nurse)
+            .Where(n => n.ProcedureId == id.Value)
+            .OrderByDescending(n => n.NoteDate)
+            .ToListAsync();
+        
+        ViewBag.NursingNotes = nursingNotes;
+
         return View(procedure);
     }
 
     // POST: Procedures/Delete/5
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> Delete(int id, bool forceDelete = false)
     {
         try

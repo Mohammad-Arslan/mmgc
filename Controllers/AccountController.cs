@@ -253,12 +253,11 @@ namespace MMGC.Controllers
             }
             else if (roles.Contains("AccountsStaff"))
             {
-                // Will redirect to Accounts controller when created
-                return RedirectToAction("Index", "Transactions");
+                return RedirectToAction("Dashboard", "Transactions");
             }
             else if (roles.Contains("LabStaff"))
             {
-                return RedirectToAction("Index", "LabTests");
+                return RedirectToAction("Dashboard", "LabTests");
             }
             else if (roles.Contains("Patient"))
             {
