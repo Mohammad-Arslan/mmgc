@@ -1,0 +1,207 @@
+@page
+@model MMGC.Pages.Search.ResultsModel
+@{
+    ViewData["Title"] = "Search Results";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <!-- Search Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-3">
+                <i class="bi bi-search"></i> Search Results
+            </h1>
+            
+            <!-- Search Form -->
+            <form method="get" class="mb-4">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="input-group input-group-lg">
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="query" 
+                                   value="@Model.Query" 
+                                   placeholder="Search doctors, procedures, patients..."
+                                   required>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="entityType" class="form-select">
+                            <option value="">All Results</option>
+                            <option value="doctor" @(Model.EntityType == "doctor" ? "selected" : "")>Doctors</option>
+                            <option value="procedure" @(Model.EntityType == "procedure" ? "selected" : "")>Procedures</option>
+                            <option value="patient" @(Model.EntityType == "patient" ? "selected" : "")>Patients</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="specialization" class="form-select" @(Model.EntityType != "doctor" ? "disabled" : "")>
+                            <option value="">All Specializations</option>
+                            <option value="Cardiology" @(Model.Specialization == "Cardiology" ? "selected" : "")>Cardiology</option>
+                            <option value="Orthopedics" @(Model.Specialization == "Orthopedics" ? "selected" : "")>Orthopedics</option>
+                            <option value="Neurology" @(Model.Specialization == "Neurology" ? "selected" : "")>Neurology</option>
+                            <option value="General Practice" @(Model.Specialization == "General Practice" ? "selected" : "")>General Practice</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (!Model.HasSearched)
+    {
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-info-circle fs-3"></i>
+            <p class="mt-3">Enter a search query to get started</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-warning text-center py-5">
+            <i class="bi bi-exclamation-triangle fs-3"></i>
+            <p class="mt-3">@Model.ErrorMessage</p>
+        </div>
+    }
+    else
+    {
+        <!-- Results Summary -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <p class="text-muted">
+                    Found <strong>@Model.TotalResults</strong> result@(Model.TotalResults != 1 ? "s" : "") 
+                    @if (!string.IsNullOrEmpty(Model.Query))
+                    {
+                        <span>for "<strong>@Model.Query</strong>"</span>
+                    }
+                </p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.EntityType) && Model.FilteredResults.Count > 0)
+        {
+            <!-- Filtered Results -->
+            <div class="row">
+                @foreach (var result in Model.FilteredResults)
+                {
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card border-0 shadow-sm h-100 hover-shadow">
+                            <div class="card-body">
+                                <!-- Entity Badge -->
+                                <span class="badge bg-primary mb-3">@result.EntityType</span>
+                                
+                                <h5 class="card-title">@result.Title</h5>
+                                
+                                @if (!string.IsNullOrEmpty(result.Subtitle))
+                                {
+                                    <p class="text-muted small mb-2">@result.Subtitle</p>
+                                }
+                                
+                                @if (!string.IsNullOrEmpty(result.Description))
+                                {
+                                    <p class="card-text small">@result.Description</p>
+                                }
+                                
+                                <!-- Relevance Score -->
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        Relevance: 
+                                        <div class="progress" style="height: 5px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: @(Math.Min(result.RelevanceScore, 100))%"></div>
+                                        </div>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-top">
+                                <a href="@result.DetailUrl" class="btn btn-sm btn-primary w-100">
+                                    View Details <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(Model.EntityType))
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No results found for the selected entity type.
+            </div>
+        }
+        else if (Model.Results.Count > 0)
+        {
+            <!-- Grouped Results by Category -->
+            @foreach (var group in Model.Results)
+            {
+                <div class="mb-5">
+                    <h4 class="mb-4">
+                        @group.Category
+                        <span class="badge bg-secondary">@group.TotalCount</span>
+                    </h4>
+
+                    <div class="row">
+                        @foreach (var result in group.Results)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card border-0 shadow-sm h-100 hover-shadow">
+                                    <div class="card-body">
+                                        <h5 class="card-title">@result.Title</h5>
+                                        
+                                        @if (!string.IsNullOrEmpty(result.Subtitle))
+                                        {
+                                            <p class="text-muted small mb-2">@result.Subtitle</p>
+                                        }
+                                        
+                                        @if (!string.IsNullOrEmpty(result.Description))
+                                        {
+                                            <p class="card-text small">@result.Description</p>
+                                        }
+                                        
+                                        <!-- Relevance Score -->
+                                        <div class="mb-3">
+                                            <small class="text-muted">
+                                                Relevance: 
+                                                <div class="progress" style="height: 5px;">
+                                                    <div class="progress-bar" role="progressbar" 
+                                                         style="width: @(Math.Min(result.RelevanceScore, 100))%"></div>
+                                                </div>
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-white border-top">
+                                        <a href="@result.DetailUrl" class="btn btn-sm btn-primary w-100">
+                                            View Details <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (group.TotalCount > group.Results.Count)
+                    {
+                        <div class="text-center mb-5">
+                            <a href="?query=@Model.Query&entityType=@group.Category.ToLower()" 
+                               class="btn btn-outline-primary btn-sm">
+                                View all @group.Category.ToLower()
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    }
+</div>
+
+<style>
+    .hover-shadow {
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>

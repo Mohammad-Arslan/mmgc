@@ -1,0 +1,187 @@
+@page
+@model MMGC.Pages.Procedures.RequestModel
+@{
+    ViewData["Title"] = "Request Procedure";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-plus"></i> Request a Procedure
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Information Alert -->
+                    <div class="alert alert-info mb-4">
+                        <strong><i class="bi bi-info-circle"></i> How it works:</strong>
+                        <ol class="mb-0 mt-2">
+                            <li>Submit your procedure request below</li>
+                            <li>Your doctor will review the request</li>
+                            <li>You'll receive notification of approval/rejection</li>
+                            <li>If approved, we'll schedule your procedure</li>
+                        </ol>
+                    </div>
+
+                    <!-- Error Message -->
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @Model.ErrorMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Success Message -->
+                    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle"></i> @Model.SuccessMessage
+                            @if (Model.CreatedRequestId.HasValue)
+                            {
+                                <br/>
+                                <small>Request ID: <strong>#@Model.CreatedRequestId</strong></small>
+                            }
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form method="post">
+                        <!-- Procedure Type -->
+                        <div class="mb-4">
+                            <label for="procedureType" class="form-label">
+                                <strong>Procedure Type</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select id="procedureType" 
+                                    name="procedureType" 
+                                    class="form-select form-select-lg"
+                                    required>
+                                <option value="">-- Select a procedure --</option>
+                                @foreach (var procedure in Model.AvailableProcedures)
+                                {
+                                    <option value="@procedure" 
+                                            @(Model.ProcedureType == procedure ? "selected" : "")>
+                                        @procedure
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Reason for Procedure -->
+                        <div class="mb-4">
+                            <label for="reasonForProcedure" class="form-label">
+                                <strong>Reason for Procedure</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="reasonForProcedure" 
+                                      name="reasonForProcedure" 
+                                      class="form-control"
+                                      rows="5"
+                                      placeholder="Please describe your condition, symptoms, and why you believe this procedure is necessary. Include any previous treatments attempted..."
+                                      required
+                                      minlength="10">@Model.ReasonForProcedure</textarea>
+                            <small class="form-text text-muted">
+                                Minimum 10 characters. Please be as detailed as possible to help your doctor review your request.
+                            </small>
+                        </div>
+
+                        <!-- Requested Date -->
+                        <div class="mb-4">
+                            <label for="requestedDate" class="form-label">Preferred Date (Optional)</label>
+                            <input type="date" 
+                                   id="requestedDate"
+                                   name="requestedDate"
+                                   class="form-control"
+                                   value="@Model.RequestedDate?.ToString("yyyy-MM-dd")"
+                                   min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")">
+                            <small class="form-text text-muted">
+                                This is just a preference. The actual date will be determined based on doctor approval and availability.
+                            </small>
+                        </div>
+
+                        <!-- Medical History -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">Medical History Disclaimer</h6>
+                                <p class="small mb-0">
+                                    Please ensure your doctor has access to your complete medical history including:
+                                    <ul class="small mt-2">
+                                        <li>Previous surgeries</li>
+                                        <li>Current medications</li>
+                                        <li>Allergies</li>
+                                        <li>Chronic conditions</li>
+                                        <li>Recent lab results</li>
+                                    </ul>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Consent -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="consentCheck"
+                                   required>
+                            <label class="form-check-label" for="consentCheck">
+                                I confirm that the information provided is accurate and complete, and I understand that a doctor will review this request before any procedure is scheduled.
+                            </label>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/patient/dashboard" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-file-earmark-plus"></i> Submit Request
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- FAQ Section -->
+                    <hr class="my-4"/>
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    How long does the review process take?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Most procedure requests are reviewed within 2-3 business days. You'll receive a notification via email or SMS once reviewed.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    What if my request is rejected?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    If rejected, your doctor will provide detailed feedback explaining the reason. You can discuss alternative treatments with your doctor.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Can I cancel my request?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Yes, you can cancel pending requests from your dashboard. Once approved and scheduled, cancellation requires doctor approval.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

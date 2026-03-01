@@ -1,0 +1,290 @@
+@model IEnumerable<MMGC.Models.Transaction>
+@{
+    ViewData["Title"] = "Financial Reports";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-file-earmark-text"></i> Financial Reports</h2>
+            <p>Generate and view financial reports</p>
+        </div>
+        @if (Model.Any())
+        {
+            <div>
+                <button type="button" class="btn btn-info" onclick="printReport()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+                <a href="@Url.Action("ExportFinancialReport", new { format = "pdf", startDate = ViewBag.StartDate, endDate = ViewBag.EndDate, paymentMode = ViewBag.PaymentMode, transactionType = ViewBag.TransactionType })" 
+                   class="btn btn-danger" target="_blank">
+                    <i class="bi bi-file-pdf"></i> Export PDF
+                </a>
+                <a href="@Url.Action("ExportFinancialReport", new { format = "excel", startDate = ViewBag.StartDate, endDate = ViewBag.EndDate, paymentMode = ViewBag.PaymentMode, transactionType = ViewBag.TransactionType })" 
+                   class="btn btn-success">
+                    <i class="bi bi-file-excel"></i> Export Excel
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="FinancialReports" class="row g-3">
+            <div class="col-md-3">
+                <label for="startDate" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="startDate" name="startDate" value="@ViewBag.StartDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="endDate" name="endDate" value="@ViewBag.EndDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label for="paymentMode" class="form-label">Payment Mode</label>
+                <select class="form-select" id="paymentMode" name="paymentMode">
+                    <option value="">All Modes</option>
+                    <option value="Cash" selected="@(ViewBag.PaymentMode == "Cash")">Cash</option>
+                    <option value="Card" selected="@(ViewBag.PaymentMode == "Card")">Card</option>
+                    <option value="Bank" selected="@(ViewBag.PaymentMode == "Bank")">Bank Transfer</option>
+                    <option value="Online" selected="@(ViewBag.PaymentMode == "Online")">Online</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="transactionType" class="form-label">Transaction Type</label>
+                <select class="form-select" id="transactionType" name="transactionType">
+                    <option value="">All Types</option>
+                    <option value="Appointment" selected="@(ViewBag.TransactionType == "Appointment")">Appointment</option>
+                    <option value="Procedure" selected="@(ViewBag.TransactionType == "Procedure")">Procedure</option>
+                    <option value="LabTest" selected="@(ViewBag.TransactionType == "LabTest")">Lab Test</option>
+                    <option value="Other" selected="@(ViewBag.TransactionType == "Other")">Other</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Generate Report
+                </button>
+                <a asp-action="FinancialReports" class="btn btn-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Reset
+                </a>
+                @if (Model.Any())
+                {
+                    <button type="button" class="btn btn-info" onclick="printReport()">
+                        <i class="bi bi-printer"></i> Print
+                    </button>
+                    <a href="@Url.Action("ExportFinancialReport", new { format = "pdf", startDate = ViewBag.StartDate, endDate = ViewBag.EndDate, paymentMode = ViewBag.PaymentMode, transactionType = ViewBag.TransactionType })" 
+                       class="btn btn-danger" target="_blank">
+                        <i class="bi bi-file-pdf"></i> Export PDF
+                    </a>
+                    <a href="@Url.Action("ExportFinancialReport", new { format = "excel", startDate = ViewBag.StartDate, endDate = ViewBag.EndDate, paymentMode = ViewBag.PaymentMode, transactionType = ViewBag.TransactionType })" 
+                       class="btn btn-success">
+                        <i class="bi bi-file-excel"></i> Export Excel
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-cash-coin"></i> Total Revenue</h5>
+                <h2 class="mb-0">PKR @(((decimal)(ViewBag.TotalAmount ?? 0)).ToString("N2"))</h2>
+                <small>@(ViewBag.TotalCount ?? 0) transaction(s)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-calendar-range"></i> Date Range</h5>
+                <p class="mb-0">@ViewBag.StartDate?.ToString("dd MMM yyyy") - @ViewBag.EndDate?.ToString("dd MMM yyyy")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-receipt"></i> Transactions</h5>
+                <h2 class="mb-0">@(ViewBag.TotalCount ?? 0)</h2>
+                <small>Completed transactions</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Mode Summary -->
+@{
+    var paymentModeSummary = ViewBag.PaymentModeSummary as dynamic;
+}
+@if (paymentModeSummary != null && ((IEnumerable<dynamic>)paymentModeSummary).Any())
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Payment Mode Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Payment Mode</th>
+                                    <th class="text-end">Count</th>
+                                    <th class="text-end">Amount</th>
+                                    <th class="text-end">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in (IEnumerable<dynamic>)paymentModeSummary)
+                                {
+                                    var percentage = ViewBag.TotalAmount > 0 ? ((decimal)item.Amount / (decimal)ViewBag.TotalAmount * 100) : 0;
+                                    <tr>
+                                        <td><strong>@item.Mode</strong></td>
+                                        <td class="text-end">@item.Count</td>
+                                        <td class="text-end"><strong>PKR @(((decimal)item.Amount).ToString("N2"))</strong></td>
+                                        <td class="text-end">@percentage.ToString("F2")%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Transaction Type Summary -->
+@{
+    var transactionTypeSummary = ViewBag.TransactionTypeSummary as dynamic;
+}
+@if (transactionTypeSummary != null && ((IEnumerable<dynamic>)transactionTypeSummary).Any())
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Transaction Type Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Transaction Type</th>
+                                    <th class="text-end">Count</th>
+                                    <th class="text-end">Amount</th>
+                                    <th class="text-end">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in (IEnumerable<dynamic>)transactionTypeSummary)
+                                {
+                                    var percentage = ViewBag.TotalAmount > 0 ? ((decimal)item.Amount / (decimal)ViewBag.TotalAmount * 100) : 0;
+                                    <tr>
+                                        <td><strong>@item.Type</strong></td>
+                                        <td class="text-end">@item.Count</td>
+                                        <td class="text-end"><strong>PKR @(((decimal)item.Amount).ToString("N2"))</strong></td>
+                                        <td class="text-end">@percentage.ToString("F2")%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Transactions Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Transaction Details</h5>
+        <span class="badge bg-info fs-6">Total: @Model.Count() Transactions</span>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th><i class="bi bi-calendar"></i> Date</th>
+                            <th><i class="bi bi-person"></i> Patient</th>
+                            <th><i class="bi bi-receipt"></i> Description</th>
+                            <th><i class="bi bi-tag"></i> Type</th>
+                            <th><i class="bi bi-credit-card"></i> Payment Mode</th>
+                            <th><i class="bi bi-cash-coin"></i> Amount</th>
+                            <th><i class="bi bi-info-circle"></i> Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.TransactionDate.ToString("dd MMM yyyy HH:mm")</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            @(item.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
+                                        </div>
+                                        <strong>@item.Patient?.FullName</strong>
+                                    </div>
+                                </td>
+                                <td>@item.Description</td>
+                                <td><span class="badge bg-secondary">@item.TransactionType</span></td>
+                                <td>@item.PaymentMode</td>
+                                <td><strong class="text-success">PKR @item.Amount.ToString("N2")</strong></td>
+                                <td>
+                                    <span class="badge bg-success">@item.Status</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-active">
+                            <td colspan="5" class="text-end"><strong>Total:</strong></td>
+                            <td><strong>PKR @Model.Sum(t => t.Amount).ToString("N2")</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No transactions found for the selected criteria.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Set default dates if not provided
+        $(document).ready(function() {
+            if (!$('#startDate').val()) {
+                var monthStart = new Date();
+                monthStart.setDate(1);
+                $('#startDate').val(monthStart.toISOString().split('T')[0]);
+            }
+            if (!$('#endDate').val()) {
+                $('#endDate').val(new Date().toISOString().split('T')[0]);
+            }
+        });
+
+        // Print function
+        function printReport() {
+            window.print();
+        }
+    </script>
+}

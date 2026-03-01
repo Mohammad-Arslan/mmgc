@@ -1,0 +1,77 @@
+@model IEnumerable<MMGC.Models.Patient>
+@{
+    ViewData["Title"] = "My Patients";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var doctor = ViewBag.Doctor as MMGC.Models.Doctor;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-people"></i> My Patients</h2>
+            <p>List of all patients under your care</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Patients Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-people-fill"></i> Patients List (@Model.Count())</h5>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>MR Number</th>
+                            <th>Patient Name</th>
+                            <th>Contact</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var patient in Model)
+                        {
+                            <tr>
+                                <td><strong>@patient.MRNumber</strong></td>
+                                <td>
+                                    <strong>@patient.FullName</strong><br>
+                                    @if (!string.IsNullOrEmpty(patient.Email))
+                                    {
+                                        <small class="text-muted">@patient.Email</small>
+                                    }
+                                </td>
+                                <td>@patient.ContactNumber</td>
+                                <td>@patient.Age years</td>
+                                <td>@patient.Gender</td>
+                                <td>
+                                    <a asp-action="PatientHistory" asp-route-id="@patient.Id" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-file-medical"></i> View History
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No patients found. Patients will appear here once they have appointments or procedures with you.
+            </div>
+        }
+    </div>
+</div>
+

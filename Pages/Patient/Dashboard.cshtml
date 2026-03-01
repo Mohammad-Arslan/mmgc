@@ -1,0 +1,335 @@
+@page
+@model MMGC.Pages.Patient.DashboardModel
+@{
+    ViewData["Title"] = "Patient Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid py-5">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-speedometer2"></i> Patient Dashboard
+            </h1>
+            @if (Model.Dashboard != null)
+            {
+                <p class="text-muted small">Welcome back, @Model.Dashboard.FullName</p>
+            }
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle"></i> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.IsLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mt-3">Loading your dashboard...</p>
+        </div>
+    }
+    else if (Model.Dashboard != null)
+    {
+        <!-- Patient Info Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 class="card-title">Personal Information</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>MR Number:</strong> @Model.Dashboard.MRNumber</p>
+                                        <p><strong>Date of Birth:</strong> @(Model.Dashboard.DateOfBirth == null ? "N/A" : ((DateTime?)Model.Dashboard.DateOfBirth).Value.ToString("MMMM dd, yyyy"))</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Contact:</strong> @Model.Dashboard.ContactNumber</p>
+                                        <p><strong>Email:</strong> @Model.Dashboard.Email</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-end">
+                                    <p class="small text-muted">Last visit: @(Model.Dashboard.LastVisitDate?.ToString("MMMM dd, yyyy") ?? "No visits")</p>
+                                    <a href="#" class="btn btn-sm btn-outline-primary">Edit Profile</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-check fs-3 text-primary mb-3"></i>
+                        <h6 class="card-title">Upcoming Appointments</h6>
+                        <h3 class="text-primary">@Model.Dashboard.UpcomingAppointmentsCount</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body text-center">
+                        <i class="bi bi-flask fs-3 text-info mb-3"></i>
+                        <h6 class="card-title">Pending Lab Tests</h6>
+                        <h3 class="text-info">@Model.Dashboard.PendingLabTestsCount</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body text-center">
+                        <i class="bi bi-receipt fs-3 text-warning mb-3"></i>
+                        <h6 class="card-title">Outstanding Invoices</h6>
+                        <h3 class="text-warning">@Model.Dashboard.OutstandingInvoicesCount</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body text-center">
+                        <i class="bi bi-currency-dollar fs-3 text-danger mb-3"></i>
+                        <h6 class="card-title">Outstanding Amount</h6>
+                        <h3 class="text-danger">@Model.Dashboard.OutstandingAmount.ToString("C")</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Upcoming Appointments -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-calendar-check"></i> Upcoming Appointments
+                        </h6>
+                        <a href="#appointmentHistory" class="btn btn-sm btn-light" data-bs-toggle="modal">View All</a>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.UpcomingAppointments.Count > 0)
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var appointment in Model.UpcomingAppointments)
+                                {
+                                    <div class="list-group-item px-0 py-3 border-bottom">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h6 class="mb-1">@appointment.Title</h6>
+                                                <p class="text-muted small mb-0">@appointment.Description</p>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-info">@appointment.Date.ToString("MMM dd")</span><br/>
+                                                <small class="text-muted">@appointment.Date.ToString("h:mm tt")</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-3">No upcoming appointments</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Lab Tests -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-flask"></i> Pending Lab Tests
+                        </h6>
+                        <a href="#labTestHistory" class="btn btn-sm btn-light" data-bs-toggle="modal">View All</a>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.PendingLabTests.Count > 0)
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var test in Model.PendingLabTests.Where(t => t.RequiresAction))
+                                {
+                                    <div class="list-group-item px-0 py-3 border-bottom">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h6 class="mb-1">@test.Title</h6>
+                                                <p class="text-muted small mb-0">@test.Description</p>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-warning">Pending</span><br/>
+                                                <small class="text-muted">Due: @test.DueDate?.ToString("MMM dd")</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-3">No pending lab tests</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Prescriptions -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-file-earmark-text"></i> Recent Prescriptions
+                        </h6>
+                        <a href="#prescriptionHistory" class="btn btn-sm btn-light" data-bs-toggle="modal">View All</a>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.RecentPrescriptions.Count > 0)
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var prescription in Model.RecentPrescriptions.Take(3))
+                                {
+                                    <div class="list-group-item px-0 py-3 border-bottom">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h6 class="mb-1">@prescription.Title</h6>
+                                                <p class="text-muted small mb-0">From: @prescription.ProviderName</p>
+                                            </div>
+                                            <div class="text-end">
+                                                <a href="@prescription.ActionUrl" class="btn btn-sm btn-outline-primary">View</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-3">No prescriptions</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Outstanding Invoices -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-receipt"></i> Outstanding Invoices
+                        </h6>
+                        <a href="#invoiceHistory" class="btn btn-sm btn-light" data-bs-toggle="modal">View All</a>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.OutstandingInvoices.Count > 0)
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var invoice in Model.OutstandingInvoices.Take(3))
+                                {
+                                    <div class="list-group-item px-0 py-3 border-bottom">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h6 class="mb-1">@invoice.Title</h6>
+                                                <p class="text-muted small mb-0">@invoice.Description</p>
+                                            </div>
+                                            <div class="text-end">
+                                                <a href="@invoice.ActionUrl" class="btn btn-sm btn-danger">Pay Now</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-3">No outstanding invoices</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3"><i class="bi bi-lightning"></i> Quick Actions</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="/appointments/book" class="btn btn-primary btn-sm">
+                                <i class="bi bi-calendar-plus"></i> Book Appointment
+                            </a>
+                            <a href="/search" class="btn btn-info btn-sm">
+                                <i class="bi bi-search"></i> Find Doctor
+                            </a>
+                            <a href="/procedures/request" class="btn btn-warning btn-sm">
+                                <i class="bi bi-file-earmark-plus"></i> Request Procedure
+                            </a>
+                            <a href="/messages" class="btn btn-secondary btn-sm">
+                                <i class="bi bi-chat-dots"></i> Messages
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Unable to load dashboard. Please refresh the page.
+        </div>
+    }
+</div>
+
+<!-- JavaScript for modal handlers -->
+@section Scripts {
+    <script>
+        // Appointment History Modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const appointmentLink = document.querySelector('a[href="#appointmentHistory"]');
+            if (appointmentLink) {
+                appointmentLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    loadAppointmentHistory(1);
+                });
+            }
+        });
+
+        async function loadAppointmentHistory(pageNumber) {
+            try {
+                const response = await fetch(`?handler=AppointmentHistory&pageNumber=${pageNumber}`, {
+                    method: 'GET',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Appointment history:', data);
+                    // Display in modal or toast
+                    alert('Loaded ' + data.items.length + ' appointments');
+                } else {
+                    alert('Error loading appointment history');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading appointment history');
+            }
+        }
+    </script>
+}

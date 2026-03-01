@@ -1,0 +1,173 @@
+@page
+@model MMGC.Pages.Appointments.SlotsModel
+@{
+    ViewData["Title"] = "Book Appointment";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-plus"></i> Book an Appointment
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Doctor Info -->
+                    @if (Model.DoctorId > 0)
+                    {
+                        <div class="alert alert-info mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Dr. @Model.DoctorName</h6>
+                                    <p class="text-muted small mb-0">@Model.Specialization</p>
+                                </div>
+                                <a href="/search?entityType=doctor" class="btn btn-sm btn-outline-info">Change Doctor</a>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Error Message -->
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @Model.ErrorMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Success Message -->
+                    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle"></i> @Model.SuccessMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form method="post">
+                        <!-- Date Selection -->
+                        <div class="mb-4">
+                            <label for="selectedDate" class="form-label">Select Date</label>
+                            <input type="date" 
+                                   class="form-control form-control-lg" 
+                                   id="selectedDate"
+                                   name="selectedDate"
+                                   value="@Model.SelectedDate"
+                                   min="@Model.MinDate.ToString("yyyy-MM-dd")"
+                                   max="@Model.MaxDate.ToString("yyyy-MM-dd")"
+                                   onchange="location.href='?doctorId=@Model.DoctorId&selectedDate=' + this.value;"
+                                   required>
+                            <small class="form-text text-muted">
+                                Select a date between @Model.MinDate.ToString("MMM dd, yyyy") and @Model.MaxDate.ToString("MMM dd, yyyy")
+                            </small>
+                        </div>
+
+                        <!-- Time Slots -->
+                        @if (Model.AvailableSlots.Count > 0)
+                        {
+                            <div class="mb-4">
+                                <label class="form-label">Select Time Slot</label>
+                                <div class="row g-2">
+                                    @foreach (var slot in Model.AvailableSlots)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="form-check slot-option">
+                                                <input class="form-check-input" 
+                                                       type="radio" 
+                                                       name="selectedSlotId" 
+                                                       id="slot_@slot.SlotId"
+                                                       value="@slot.SlotId"
+                                                       required>
+                                                <label class="form-check-label slot-label" for="slot_@slot.SlotId">
+                                                    <strong>@slot.StartTime.ToString("h:mm tt")</strong> - @slot.EndTime.ToString("h:mm tt")
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning mb-4">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>No available slots</strong><br/>
+                                Please select a different date or doctor.
+                            </div>
+                        }
+
+                        <!-- Reason for Visit -->
+                        <div class="mb-4">
+                            <label for="reason" class="form-label">Reason for Visit</label>
+                            <textarea class="form-control form-control-sm" 
+                                      id="reason"
+                                      name="reason" 
+                                      rows="3" 
+                                      placeholder="Describe your symptoms or reason for visiting..."
+                                      required></textarea>
+                        </div>
+
+                        <!-- Terms & Conditions -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="termsCheck"
+                                   required>
+                            <label class="form-check-label" for="termsCheck">
+                                I agree to the appointment terms and conditions
+                            </label>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/patient/dashboard" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary" @(Model.AvailableSlots.Count == 0 ? "disabled" : "")>
+                                <i class="bi bi-check-circle"></i> Confirm Booking
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Slot Availability Summary -->
+                    <hr class="my-4"/>
+                    <div class="alert alert-light small">
+                        <strong>Showing availability for:</strong> @DateTime.Parse(Model.SelectedDate ?? "").ToString("dddd, MMMM dd, yyyy")<br/>
+                        <strong>Available slots:</strong> @Model.AvailableSlots.Count<br/>
+                        <strong>Slot duration:</strong> 30 minutes
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .slot-option {
+        padding: 12px;
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .slot-option:hover {
+        border-color: #0d6efd;
+        background-color: #f0f7ff;
+    }
+
+    .slot-option input[type="radio"]:checked + .slot-label {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+
+    .slot-option input[type="radio"]:checked {
+        border-color: #0d6efd;
+    }
+
+    .slot-label {
+        margin-bottom: 0;
+        cursor: pointer;
+    }
+</style>

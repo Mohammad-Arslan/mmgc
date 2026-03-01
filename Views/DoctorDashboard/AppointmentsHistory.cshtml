@@ -1,0 +1,138 @@
+@model IEnumerable<MMGC.Models.Appointment>
+@{
+    ViewData["Title"] = "Appointments History";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var doctor = ViewBag.Doctor as MMGC.Models.Doctor;
+    var fromDate = ViewBag.FromDate as DateTime?;
+    var toDate = ViewBag.ToDate as DateTime?;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-clock-history"></i> Appointments History</h2>
+            <p>View all your appointments sorted by date</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="fromDate" class="form-label">From Date</label>
+                <input type="date" name="fromDate" id="fromDate" class="form-control" value="@(fromDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-4">
+                <label for="toDate" class="form-label">To Date</label>
+                <input type="date" name="toDate" id="toDate" class="form-control" value="@(toDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+                <a asp-action="AppointmentsHistory" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Appointments Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Appointments (@Model.Count())</h5>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Patient</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Nurse</th>
+                            <th>Fee</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var appointment in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@appointment.AppointmentDate.ToString("dd MMM yyyy")</strong><br>
+                                    <small class="text-muted">@appointment.AppointmentDate.ToString("HH:mm")</small>
+                                </td>
+                                <td>
+                                    @if (appointment.Patient != null)
+                                    {
+                                        <strong>@appointment.Patient.FullName</strong><br>
+                                        <small class="text-muted">MR: @appointment.Patient.MRNumber</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td><span class="badge bg-info">@appointment.AppointmentType</span></td>
+                                <td>
+                                    <span class="badge bg-@(appointment.Status == "Completed" ? "success" : appointment.Status == "Cancelled" ? "danger" : appointment.Status == "No-Show" ? "secondary" : "warning")">
+                                        @appointment.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (appointment.Nurse != null)
+                                    {
+                                        @appointment.Nurse.FullName
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>₹@appointment.ConsultationFee.ToString("N2")</td>
+                                <td>
+                                    <a asp-controller="Appointments" asp-action="Details" asp-route-id="@appointment.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No appointments found for the selected date range.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Set default date range to last 30 days if not specified
+        if (!document.getElementById('fromDate').value) {
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            document.getElementById('fromDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('toDate').value = today.toISOString().split('T')[0];
+        }
+    </script>
+}
+

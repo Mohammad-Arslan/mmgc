@@ -1,0 +1,58 @@
+// ============================================================
+// COPY THE FOLLOWING CODE INTO Program.cs AFTER THE EXISTING SERVICE REGISTRATIONS
+// ============================================================
+
+// ===== PHASE 2: FEATURE SERVICES =====
+// Register Patient Dashboard Service
+builder.Services.AddScoped<IPatientDashboardService, PatientDashboardService>();
+
+// Register Search Service
+builder.Services.AddScoped<ISearchService, SearchService>();
+
+// Register Notification Services
+builder.Services.AddScoped<INotificationLogService, NotificationLogService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Register Notification Providers
+builder.Services.AddScoped<INotificationProvider, SmsNotificationProvider>();
+builder.Services.AddScoped<INotificationProvider, EmailNotificationProvider>();
+
+// ===== END PHASE 2 SERVICES =====
+
+/*
+IMPORTANT NOTES:
+
+1. Add these using statements at the top of Program.cs:
+   using MMGC.Shared.Interfaces;
+   using MMGC.Features.Patients.Services;
+   using MMGC.Features.Search.Services;
+   using MMGC.Shared.Infrastructure.Services;
+
+2. Ensure appsettings.json includes Twilio configuration:
+   
+   "Twilio": {
+     "AccountSid": "your_account_sid",
+     "AuthToken": "your_auth_token",
+     "FromPhone": "+1234567890"
+   }
+
+3. Run database migration:
+   dotnet ef database update
+
+4. The services are registered as Scoped, meaning:
+   - One instance per HTTP request
+   - Proper disposal of DbContext
+   - Safe for concurrent requests
+
+5. Notification providers are registered with collection:
+   - Can have multiple providers
+   - NotificationService receives IEnumerable<INotificationProvider>
+   - New providers can be added without changing NotificationService
+
+6. For production, add:
+   - Exception handling middleware for API errors
+   - Authorization policies for controllers
+   - Logging configuration
+   - Retry policy for notifications (Polly)
+   - Cache for frequently accessed data
+*/
