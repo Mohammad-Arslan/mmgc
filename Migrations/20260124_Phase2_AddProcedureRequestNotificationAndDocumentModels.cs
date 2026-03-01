@@ -30,12 +30,8 @@ public partial class Phase2_AddProcedureRequestNotificationAndDocumentModels : M
             rowVersion: true,
             nullable: true);
 
-        migrationBuilder.AddColumn<string>(
-            name: "CreatedBy",
-            table: "Appointments",
-            type: "nvarchar(450)",
-            maxLength: 450,
-            nullable: true);
+        // Note: CreatedBy column already exists in Appointments table, so we don't add it again
+        // Removed: migrationBuilder.AddColumn<string> for CreatedBy to avoid duplicate column error
 
         // Create ProcedureRequest table
         migrationBuilder.CreateTable(
@@ -77,7 +73,7 @@ public partial class Phase2_AddProcedureRequestNotificationAndDocumentModels : M
                     column: x => x.LinkedProcedureId,
                     principalTable: "Procedures",
                     principalColumn: "Id",
-                    onDelete: ReferentialAction.SetNull);
+                    onDelete: ReferentialAction.NoAction);  // Changed from SetNull to NoAction to avoid cascade conflict
             });
 
         // Create NotificationLog table
@@ -242,10 +238,6 @@ public partial class Phase2_AddProcedureRequestNotificationAndDocumentModels : M
 
         migrationBuilder.DropColumn(
             name: "RowVersion",
-            table: "Appointments");
-
-        migrationBuilder.DropColumn(
-            name: "CreatedBy",
             table: "Appointments");
     }
 }
