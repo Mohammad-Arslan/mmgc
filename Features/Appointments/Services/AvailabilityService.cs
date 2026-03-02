@@ -43,27 +43,19 @@ public class AvailabilityService : IAvailabilityService
                 .ToListAsync(cancellationToken);
 
             // Get doctor-defined schedules for this date (date-specific)
+            var scheduleDateEnd = dateOnly.AddDays(1);
             var schedules = await _context.DoctorSchedules
                 .AsNoTracking()
-                .Where(ds => ds.DoctorId == doctorId && ds.ScheduleDate.Date == dateOnly && ds.IsAvailable)
+                .Where(ds => ds.DoctorId == doctorId && ds.ScheduleDate >= dateOnly && ds.ScheduleDate < scheduleDateEnd && ds.IsAvailable)
                 .OrderBy(ds => ds.StartTime)
                 .ToListAsync(cancellationToken);
 
-            // Build time blocks: from DoctorSchedules or fallback to 9 AM - 5 PM
+            // Build time blocks ONLY from DoctorSchedules - no fallback
             var blocks = new List<(TimeSpan Start, TimeSpan End)>();
-            if (schedules.Count > 0)
+            foreach (var s in schedules)
             {
-                foreach (var s in schedules)
-                {
-                    if (s.EndTime > s.StartTime)
-                        blocks.Add((s.StartTime, s.EndTime));
-                }
-            }
-            if (blocks.Count == 0)
-            {
-                // Fallback: Mon-Fri 9-5, weekend = no slots
-                if (dateOnly.DayOfWeek != DayOfWeek.Saturday && dateOnly.DayOfWeek != DayOfWeek.Sunday)
-                    blocks.Add((new TimeSpan(9, 0, 0), new TimeSpan(17, 0, 0)));
+                if (s.EndTime > s.StartTime)
+                    blocks.Add((s.StartTime, s.EndTime));
             }
 
             var slotDuration = SystemConstants.APPOINTMENT_SLOT_DURATION_MINUTES;
@@ -260,18 +252,15 @@ public class AvailabilityService : IAvailabilityService
         try
         {
             var dateOnly = date.Date;
+            var scheduleDateEnd = dateOnly.AddDays(1);
             var schedule = await _context.DoctorSchedules
                 .AsNoTracking()
-                .Where(ds => ds.DoctorId == doctorId && ds.ScheduleDate.Date == dateOnly && ds.IsAvailable)
+                .Where(ds => ds.DoctorId == doctorId && ds.ScheduleDate >= dateOnly && ds.ScheduleDate < scheduleDateEnd && ds.IsAvailable)
                 .OrderBy(ds => ds.StartTime)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (schedule != null)
                 return (schedule.StartTime, schedule.EndTime);
-
-            // Default: Monday-Friday 9 AM to 5 PM
-            if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
-                return (new TimeSpan(9, 0, 0), new TimeSpan(17, 0, 0));
 
             return null;
         }

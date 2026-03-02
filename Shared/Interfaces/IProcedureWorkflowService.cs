@@ -12,15 +12,17 @@ public interface IProcedureWorkflowService
     /// Creates a new procedure request from a patient.
     /// </summary>
     /// <param name="patientId">The requesting patient's ID.</param>
+    /// <param name="doctorId">The doctor who will review the request.</param>
     /// <param name="procedureType">Type of procedure requested.</param>
     /// <param name="reason">Clinical reason for procedure.</param>
     /// <param name="requestedDate">Preferred date for procedure.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Created procedure request DTO.</returns>
     Task<ProcedureRequestDto> CreateProcedureRequestAsync(
-        int patientId, 
-        string procedureType, 
-        string reason, 
+        int patientId,
+        int? doctorId,
+        string procedureType,
+        string reason,
         DateTime? requestedDate = null,
         CancellationToken cancellationToken = default);
 

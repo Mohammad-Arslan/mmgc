@@ -96,10 +96,4 @@ public class ProcedureRequest
 
     [ForeignKey(nameof(LinkedProcedureId))]
     public virtual Procedure? LinkedProcedure { get; set; }
-
-    /// <summary>
-    /// Concurrency token for optimistic concurrency control.
-    /// </summary>
-    [Timestamp]
-    public byte[]? RowVersion { get; set; }
 }

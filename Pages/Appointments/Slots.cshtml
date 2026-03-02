@@ -55,6 +55,7 @@
                     }
 
                     <form method="post">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" name="DoctorId" value="@Model.DoctorId" />
                         <input type="hidden" name="SelectedDate" value="@Model.SelectedDate" />
                         <!-- Date Selection -->

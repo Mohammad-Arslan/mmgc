@@ -27,19 +27,10 @@
 
                     @if (User.IsInRole("Admin"))
                     {
-                        var doctorsList = ViewBag.DoctorsList as IEnumerable<MMGC.Models.Doctor>;
                         <div class="mb-3">
                             <label asp-for="DoctorId" class="form-label"></label>
-                            <select asp-for="DoctorId" class="form-select" id="DoctorId" required>
+                            <select asp-for="DoctorId" asp-items="ViewBag.Doctors" class="form-select" id="DoctorId">
                                 <option value="">-- Select Doctor --</option>
-                                @if (doctorsList != null)
-                                {
-                                    @foreach (var doctor in doctorsList)
-                                    {
-                                        var isSelected = Model.DoctorId == doctor.Id;
-                                        <option value="@doctor.Id" selected="@isSelected">@doctor.FullName - @doctor.Specialization</option>
-                                    }
-                                }
                             </select>
                             <span asp-validation-for="DoctorId" class="text-danger"></span>
                         </div>

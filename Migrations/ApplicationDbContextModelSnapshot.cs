@@ -364,7 +364,7 @@ namespace MMGC.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("DoctorId")
+                    b.Property<int?>("DoctorId")
                         .HasColumnType("int");
 
                     b.Property<TimeSpan>("EndTime")
@@ -898,9 +898,6 @@ namespace MMGC.Migrations
                         .IsRequired()
                         .HasColumnType("int");
 
-                    b.Property<int?>("PatientId1")
-                        .HasColumnType("int");
-
                     b.Property<int?>("ProcedureId")
                         .HasColumnType("int");
 
@@ -930,8 +927,6 @@ namespace MMGC.Migrations
                     b.HasIndex("NurseId");
 
                     b.HasIndex("PatientId");
-
-                    b.HasIndex("PatientId1");
 
                     b.HasIndex("ProcedureId");
 
@@ -1098,9 +1093,6 @@ namespace MMGC.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PatientId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("ProcedureType")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1117,11 +1109,6 @@ namespace MMGC.Migrations
                     b.Property<DateTime?>("ReviewedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
                     b.Property<DateTime?>("ScheduledDate")
                         .HasColumnType("datetime2");
 
@@ -1135,8 +1122,6 @@ namespace MMGC.Migrations
                     b.HasIndex("LinkedProcedureId");
 
                     b.HasIndex("PatientId");
-
-                    b.HasIndex("PatientId1");
 
                     b.HasIndex("Status");
 
@@ -1628,14 +1613,10 @@ namespace MMGC.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("MMGC.Models.Patient", "Patient")
-                        .WithMany()
+                        .WithMany("PatientVitals")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("MMGC.Models.Patient", null)
-                        .WithMany("PatientVitals")
-                        .HasForeignKey("PatientId1");
 
                     b.HasOne("MMGC.Models.Procedure", "Procedure")
                         .WithMany()
@@ -1722,14 +1703,10 @@ namespace MMGC.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("MMGC.Models.Patient", "Patient")
-                        .WithMany()
+                        .WithMany("ProcedureRequests")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("MMGC.Models.Patient", null)
-                        .WithMany("ProcedureRequests")
-                        .HasForeignKey("PatientId1");
 
                     b.Navigation("AssignedDoctor");
 

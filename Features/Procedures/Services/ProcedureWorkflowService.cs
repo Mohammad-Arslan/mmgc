@@ -22,7 +22,7 @@ public class ProcedureWorkflowService : IProcedureWorkflowService
         _logger = logger;
     }
 
-    public async Task<ProcedureRequestDto> CreateProcedureRequestAsync(int patientId, string procedureType, string reason, DateTime? requestedDate = null, CancellationToken cancellationToken = default)
+    public async Task<ProcedureRequestDto> CreateProcedureRequestAsync(int patientId, int? doctorId, string procedureType, string reason, DateTime? requestedDate = null, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -33,6 +33,7 @@ public class ProcedureWorkflowService : IProcedureWorkflowService
             var request = new ProcedureRequest
             {
                 PatientId = patientId,
+                DoctorId = doctorId,
                 ProcedureType = procedureType,
                 ReasonForProcedure = reason,
                 RequestedDate = requestedDate,

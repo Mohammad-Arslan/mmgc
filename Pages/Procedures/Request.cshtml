@@ -50,6 +50,28 @@
                     }
 
                     <form method="post">
+                        @Html.AntiForgeryToken()
+                        <!-- Doctor Selection -->
+                        <div class="mb-4">
+                            <label for="doctorId" class="form-label">
+                                <strong>Select Doctor</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select id="doctorId" 
+                                    name="DoctorId" 
+                                    class="form-select form-select-lg"
+                                    required>
+                                <option value="">-- Select your doctor --</option>
+                                @foreach (var doc in Model.AvailableDoctors)
+                                {
+                                    <option value="@doc.Id" @(Model.DoctorId == doc.Id ? "selected" : "")>
+                                        Dr. @doc.FullName
+                                    </option>
+                                }
+                            </select>
+                            <small class="form-text text-muted">The doctor who will review your procedure request.</small>
+                        </div>
+
                         <!-- Procedure Type -->
                         <div class="mb-4">
                             <label for="procedureType" class="form-label">
@@ -69,6 +91,10 @@
                                     </option>
                                 }
                             </select>
+                            @if (Model.AvailableProcedures.Count == 0)
+                            {
+                                <small class="form-text text-warning">No procedures available. Please contact administration to add procedures.</small>
+                            }
                         </div>
 
                         <!-- Reason for Procedure -->

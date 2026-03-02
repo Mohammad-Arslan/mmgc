@@ -104,8 +104,11 @@ public class DoctorSchedulesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("DoctorId,ScheduleDate,StartTime,EndTime,IsAvailable", Prefix = "")] DoctorSchedule schedule)
+    public async Task<IActionResult> Create(DoctorSchedule schedule)
     {
+        // Clear navigation property - not bound from form (same as AppointmentsController)
+        ModelState.Remove(nameof(DoctorSchedule.Doctor));
+
         // Fallback: HTML5 time input sends "HH:mm" which may not bind to TimeSpan in some setups
         if (Request.Form.TryGetValue("StartTime", out var startVal) && Request.Form.TryGetValue("EndTime", out var endVal))
         {
@@ -131,11 +134,6 @@ public class DoctorSchedulesController : Controller
             schedule.DoctorId = doctor.Id;
             ModelState.Remove(nameof(schedule.DoctorId));
         }
-        else if (schedule.DoctorId <= 0 && Request.Form.TryGetValue("DoctorId", out var doctorIdVal) && int.TryParse(doctorIdVal.ToString(), out var parsedId))
-        {
-            schedule.DoctorId = parsedId;
-            ModelState.Remove(nameof(schedule.DoctorId));
-        }
 
         if (schedule.EndTime <= schedule.StartTime)
         {
@@ -151,6 +149,7 @@ public class DoctorSchedulesController : Controller
         {
             schedule.DayOfWeek = schedule.ScheduleDate.ToString("dddd");
             schedule.CreatedDate = DateTime.Now;
+            schedule.Doctor = null; // EF uses FK only
             _context.Add(schedule);
             await _context.SaveChangesAsync();
             _logger.LogInformation("Doctor schedule created: DoctorId={DoctorId}, Date={Date}", schedule.DoctorId, schedule.ScheduleDate);
@@ -158,7 +157,7 @@ public class DoctorSchedulesController : Controller
             return RedirectToAction(nameof(Index), new { doctorId = User.IsInRole("Admin") ? schedule.DoctorId : (int?)null });
         }
 
-        await PopulateDoctorsDropdownAsync(schedule.DoctorId);
+        await PopulateDoctorsDropdownAsync(schedule.DoctorId ?? 0);
         return View(schedule);
     }
 
@@ -182,10 +181,11 @@ public class DoctorSchedulesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,DoctorId,ScheduleDate,StartTime,EndTime,IsAvailable", Prefix = "")] DoctorSchedule schedule)
+    public async Task<IActionResult> Edit(int id, DoctorSchedule schedule)
     {
         if (id != schedule.Id) return NotFound();
 
+        ModelState.Remove(nameof(DoctorSchedule.Doctor));
         schedule.DayOfWeek = schedule.ScheduleDate.ToString("dddd");
         ModelState.Remove(nameof(schedule.DayOfWeek));
 
@@ -205,6 +205,7 @@ public class DoctorSchedulesController : Controller
         if (ModelState.IsValid)
         {
             schedule.DayOfWeek = schedule.ScheduleDate.ToString("dddd");
+            schedule.Doctor = null; // EF uses FK only
             try
             {
                 _context.Update(schedule);
@@ -267,16 +268,12 @@ public class DoctorSchedulesController : Controller
         {
             var doctors = await _context.Doctors.Where(d => d.IsActive).OrderBy(d => d.FirstName).ToListAsync();
             ViewBag.Doctors = new SelectList(doctors, "Id", "FullName", selectedId);
-            ViewBag.DoctorsList = doctors;
         }
         else
         {
             var doctor = await GetCurrentDoctorAsync();
             if (doctor != null)
-            {
                 ViewBag.Doctors = new SelectList(new List<Doctor> { doctor }, "Id", "FullName", doctor.Id);
-                ViewBag.DoctorsList = new List<Doctor> { doctor };
-            }
         }
     }
 }

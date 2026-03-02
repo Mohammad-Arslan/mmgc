@@ -178,10 +178,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(nn => nn.NurseId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Configure PatientVital relationships
+        // Configure PatientVital relationships (use WithMany to avoid PatientId1 shadow property)
         builder.Entity<PatientVital>()
             .HasOne(pv => pv.Patient)
-            .WithMany()
+            .WithMany(p => p.PatientVitals)
             .HasForeignKey(pv => pv.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -203,10 +203,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(pv => pv.NurseId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Configure ProcedureRequest relationships
+        // Configure ProcedureRequest relationships (use WithMany to avoid PatientId1 shadow property)
         builder.Entity<ProcedureRequest>()
             .HasOne(pr => pr.Patient)
-            .WithMany()
+            .WithMany(p => p.ProcedureRequests)
             .HasForeignKey(pr => pr.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 

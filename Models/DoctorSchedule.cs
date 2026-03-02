@@ -8,9 +8,10 @@ public class DoctorSchedule
     [Key]
     public int Id { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "Please select a doctor.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a valid doctor.")]
     [Display(Name = "Doctor")]
-    public int DoctorId { get; set; }
+    public int? DoctorId { get; set; }
 
     [Display(Name = "Day of Week")]
     [StringLength(20)]
