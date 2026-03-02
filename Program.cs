@@ -122,6 +122,7 @@ builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IProcedureWorkflowService, ProcedureWorkflowService>();
 
 // ===== PHASE 3: PUBLIC WEBSITE & DOCUMENT SERVICES =====
+builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddScoped<IDoctorDirectoryService, DoctorDirectoryService>();
 builder.Services.AddScoped<IPublicWebsiteService, PublicWebsiteService>();

@@ -88,6 +88,10 @@ public class DoctorDirectoryService : IDoctorDirectoryService
                 })
                 .ToListAsync(cancellationToken);
 
+            var imageUrls = await GetDoctorProfileImageUrlsAsync(doctors.Select(d => d.Id).ToList(), cancellationToken);
+            foreach (var d in doctors)
+                d.ProfileImageUrl = imageUrls.GetValueOrDefault(d.Id);
+
             return (doctors, totalCount);
         }
         catch (Exception ex)
@@ -120,6 +124,10 @@ public class DoctorDirectoryService : IDoctorDirectoryService
                 })
                 .ToListAsync(cancellationToken);
 
+            var imageUrls = await GetDoctorProfileImageUrlsAsync(doctors.Select(d => d.Id).ToList(), cancellationToken);
+            foreach (var d in doctors)
+                d.ProfileImageUrl = imageUrls.GetValueOrDefault(d.Id);
+
             return doctors;
         }
         catch (Exception ex)
@@ -149,7 +157,7 @@ public class DoctorDirectoryService : IDoctorDirectoryService
                 doctorId, startDate, endDate, cancellationToken);
             var availableCount = allSlots.Count(s => s.SlotStatus == Shared.Enums.SlotStatusEnum.Available);
 
-            return new DoctorProfileDto
+            var profile = new DoctorProfileDto
             {
                 Id = doctor.Id,
                 FirstName = doctor.FirstName,
@@ -168,12 +176,33 @@ public class DoctorDirectoryService : IDoctorDirectoryService
                 AvailableSlotsCount = availableCount,
                 AvailableSlots = allSlots
             };
+
+            profile.ProfileImageUrl = await _context.Images
+                .AsNoTracking()
+                .Where(i => i.ImageableType == "Doctor" && i.ImageableId == doctorId && i.Tag == "profile")
+                .Select(i => i.FilePath)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return profile;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching doctor profile for ID {DoctorId}", doctorId);
             throw;
         }
+    }
+
+    private async Task<Dictionary<int, string>> GetDoctorProfileImageUrlsAsync(
+        List<int> doctorIds,
+        CancellationToken cancellationToken)
+    {
+        if (doctorIds.Count == 0) return new Dictionary<int, string>();
+        var images = await _context.Images
+            .AsNoTracking()
+            .Where(i => i.ImageableType == "Doctor" && i.Tag == "profile" && doctorIds.Contains(i.ImageableId))
+            .Select(i => new { i.ImageableId, i.FilePath })
+            .ToListAsync(cancellationToken);
+        return images.ToDictionary(x => x.ImageableId, x => x.FilePath);
     }
 
     public async Task<List<string>> GetSpecializationsAsync(CancellationToken cancellationToken = default)

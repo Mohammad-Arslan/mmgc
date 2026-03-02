@@ -68,9 +68,16 @@
                     <div class="doctor-card card border-0 shadow-sm h-100">
                         <div class="card-header bg-primary text-white py-4 text-center">
                             <div class="doctor-avatar mb-2">
-                                <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                    <span class="text-primary fw-bold fs-3">Dr.@doctor.LastName[0]</span>
-                                </div>
+                                @if (!string.IsNullOrEmpty(doctor.ProfileImageUrl))
+                                {
+                                    <img src="@doctor.ProfileImageUrl" alt="Dr. @doctor.FullName" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <span class="text-primary fw-bold fs-3">Dr.@doctor.LastName[0]</span>
+                                    </div>
+                                }
                             </div>
                             <h5 class="mb-0">Dr. @doctor.FullName</h5>
                             <p class="mb-0 small opacity-90">@doctor.Specialization</p>

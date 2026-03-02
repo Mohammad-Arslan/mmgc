@@ -32,6 +32,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<DocumentAuditLog> DocumentAuditLogs { get; set; }
     public DbSet<Testimonial> Testimonials { get; set; }
     public DbSet<ContactMessage> ContactMessages { get; set; }
+    public DbSet<Image> Images { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -276,6 +277,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         builder.Entity<ProcedureRequest>()
             .HasIndex(pr => pr.Status);
+
+        // Polymorphic Image - composite index for lookups
+        builder.Entity<Image>()
+            .HasIndex(i => new { i.ImageableType, i.ImageableId, i.Tag });
     }
 }
 

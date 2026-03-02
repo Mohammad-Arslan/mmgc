@@ -19,9 +19,16 @@ else
                     <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
                         <div class="card-body bg-primary text-white text-center py-5">
                             <div class="mb-3">
-                                <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
-                                    <span class="text-primary fw-bold display-6">Dr.@Model.LastName[0]</span>
-                                </div>
+                                @if (!string.IsNullOrEmpty(Model.ProfileImageUrl))
+                                {
+                                    <img src="@Model.ProfileImageUrl" alt="Dr. @Model.FullName" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                                        <span class="text-primary fw-bold display-6">Dr.@Model.LastName[0]</span>
+                                    </div>
+                                }
                             </div>
                             <h3 class="mb-1">Dr. @Model.FullName</h3>
                             <p class="mb-3 opacity-90">@Model.Specialization</p>

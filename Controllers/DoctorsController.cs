@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MMGC.Models;
 using MMGC.Services;
+using MMGC.Shared.Interfaces;
 
 namespace MMGC.Controllers;
 
@@ -10,10 +11,12 @@ namespace MMGC.Controllers;
 public class DoctorsController : Controller
 {
     private readonly IDoctorService _doctorService;
+    private readonly IImageService _imageService;
 
-    public DoctorsController(IDoctorService doctorService)
+    public DoctorsController(IDoctorService doctorService, IImageService imageService)
     {
         _doctorService = doctorService;
+        _imageService = imageService;
     }
 
     // GET: Doctors
@@ -75,13 +78,17 @@ public class DoctorsController : Controller
     // POST: Doctors/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("FirstName,LastName,Specialization,ContactNumber,Email,LicenseNumber,Address,ConsultationFee,IsActive")] Doctor doctor)
+    public async Task<IActionResult> Create([Bind("FirstName,LastName,Specialization,ContactNumber,Email,LicenseNumber,Address,ConsultationFee,IsActive")] Doctor doctor, IFormFile? profileImage)
     {
         if (ModelState.IsValid)
         {
             try
             {
-                await _doctorService.CreateDoctorAsync(doctor);
+                var created = await _doctorService.CreateDoctorAsync(doctor);
+                if (profileImage != null)
+                {
+                    await _imageService.UploadImageAsync("Doctor", created.Id, "profile", profileImage);
+                }
                 TempData["SuccessMessage"] = "Doctor added successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -106,13 +113,14 @@ public class DoctorsController : Controller
         {
             return NotFound();
         }
+        ViewBag.ProfileImageUrl = await _imageService.GetImageUrlAsync("Doctor", id.Value, "profile");
         return View(doctor);
     }
 
     // POST: Doctors/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,Specialization,ContactNumber,Email,LicenseNumber,Address,ConsultationFee,IsActive")] Doctor doctor)
+    public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,Specialization,ContactNumber,Email,LicenseNumber,Address,ConsultationFee,IsActive")] Doctor doctor, IFormFile? profileImage)
     {
         if (id != doctor.Id)
         {
@@ -124,6 +132,10 @@ public class DoctorsController : Controller
             try
             {
                 await _doctorService.UpdateDoctorAsync(doctor);
+                if (profileImage != null)
+                {
+                    await _imageService.UploadImageAsync("Doctor", doctor.Id, "profile", profileImage);
+                }
                 TempData["SuccessMessage"] = "Doctor updated successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -136,6 +148,7 @@ public class DoctorsController : Controller
                 ModelState.AddModelError("", $"Error updating doctor: {ex.Message}");
             }
         }
+        ViewBag.ProfileImageUrl = await _imageService.GetImageUrlAsync("Doctor", doctor.Id, "profile");
         return View(doctor);
     }
 

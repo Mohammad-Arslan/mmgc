@@ -26,6 +26,13 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> @TempData["WarningMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 <div class="row">
     <div class="col-md-8">
@@ -34,7 +41,7 @@
                 <h5 class="mb-0"><i class="bi bi-person-badge"></i> Profile Information</h5>
             </div>
             <div class="card-body">
-                <form asp-action="Profile" method="post">
+                <form asp-action="Profile" method="post" enctype="multipart/form-data" id="profileForm">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                     <input type="hidden" asp-for="Id" />
                     <input type="hidden" asp-for="CreatedDate" />
@@ -93,6 +100,22 @@
                             <input asp-for="ConsultationFee" class="form-control" type="number" step="0.01" />
                         </div>
                         <span asp-validation-for="ConsultationFee" class="text-danger"></span>
+                    </div>
+
+                    <h6 class="mb-2"><i class="bi bi-image"></i> Profile Photo</h6>
+                    <div class="mb-3">
+                        @{
+                            var profileImageUrl = ViewBag.ProfileImageUrl as string;
+                        }
+                        @if (!string.IsNullOrEmpty(profileImageUrl))
+                        {
+                            <div class="mb-2">
+                                <img src="@profileImageUrl" alt="Profile" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" />
+                                <span class="text-muted small ms-2">Current photo</span>
+                            </div>
+                        }
+                        <input type="file" name="profileImage" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" />
+                        <small class="text-muted">JPG, PNG, GIF or WebP. Max 5MB. Leave empty to keep current.</small>
                     </div>
 
                     <div class="d-flex justify-content-between">

@@ -21,7 +21,7 @@
     <div class="col-lg-10 col-xl-8">
         <div class="card">
             <div class="card-body">
-                <form asp-action="Edit" method="post" id="doctorForm">
+                <form asp-action="Edit" method="post" enctype="multipart/form-data" id="doctorForm">
                     <input type="hidden" asp-for="Id" />
                     <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
                     
@@ -76,6 +76,23 @@
                             <input asp-for="ConsultationFee" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" />
                         </div>
                         <span asp-validation-for="ConsultationFee" class="text-danger"></span>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-image"></i> Profile Photo (Optional)</h5>
+                    <div class="mb-3">
+                        @{
+                            var profileImageUrl = ViewBag.ProfileImageUrl as string;
+                        }
+                        @if (!string.IsNullOrEmpty(profileImageUrl))
+                        {
+                            <div class="mb-2">
+                                <img src="@profileImageUrl" alt="Current profile" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" />
+                                <span class="text-muted small ms-2">Current photo</span>
+                            </div>
+                        }
+                        <label class="form-label">@(string.IsNullOrEmpty(profileImageUrl) ? "Add" : "Change") Profile Image</label>
+                        <input type="file" name="profileImage" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" />
+                        <small class="text-muted">JPG, PNG, GIF or WebP. Max 5MB. Leave empty to keep current.</small>
                     </div>
 
                     <h5 class="mb-3 mt-4"><i class="bi bi-geo-alt"></i> Address</h5>

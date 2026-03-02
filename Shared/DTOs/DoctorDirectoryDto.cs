@@ -38,6 +38,11 @@ public class DoctorDirectoryDto
     /// Years of experience (calculated from license or profile data).
     /// </summary>
     public int? YearsOfExperience { get; set; }
+
+    /// <summary>
+    /// Profile image URL (from polymorphic Image model).
+    /// </summary>
+    public string? ProfileImageUrl { get; set; }
 }
 
 /// <summary>
@@ -77,4 +82,9 @@ public class DoctorCardDto
     public double AverageRating { get; set; }
     
     public int PatientCount { get; set; }
+
+    /// <summary>
+    /// Profile image URL (from polymorphic Image model).
+    /// </summary>
+    public string? ProfileImageUrl { get; set; }
 }

@@ -14,6 +14,7 @@ public class DoctorDashboardController : Controller
     private readonly IDoctorDashboardService _dashboardService;
     private readonly IDoctorService _doctorService;
     private readonly IProcedureWorkflowService _procedureWorkflowService;
+    private readonly IImageService _imageService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<DoctorDashboardController> _logger;
 
@@ -21,12 +22,14 @@ public class DoctorDashboardController : Controller
         IDoctorDashboardService dashboardService,
         IDoctorService doctorService,
         IProcedureWorkflowService procedureWorkflowService,
+        IImageService imageService,
         UserManager<ApplicationUser> userManager,
         ILogger<DoctorDashboardController> logger)
     {
         _dashboardService = dashboardService;
         _doctorService = doctorService;
         _procedureWorkflowService = procedureWorkflowService;
+        _imageService = imageService;
         _userManager = userManager;
         _logger = logger;
     }
@@ -92,13 +95,14 @@ public class DoctorDashboardController : Controller
         }
 
         var profile = await _dashboardService.GetDoctorProfileAsync(doctor.Id);
+        ViewBag.ProfileImageUrl = await _imageService.GetImageUrlAsync("Doctor", doctor.Id, "profile");
         return View(profile);
     }
 
     // POST: DoctorDashboard/Profile
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Profile(int id, [Bind("Id,FirstName,LastName,Specialization,ContactNumber,Email,LicenseNumber,Address,ConsultationFee")] Doctor doctor)
+    public async Task<IActionResult> Profile(int id, [Bind("Id,FirstName,LastName,Specialization,ContactNumber,Email,LicenseNumber,Address,ConsultationFee")] Doctor doctor, IFormFile? profileImage)
     {
         if (id != doctor.Id)
         {
@@ -115,8 +119,27 @@ public class DoctorDashboardController : Controller
         {
             try
             {
-                await _doctorService.UpdateDoctorAsync(doctor);
-                TempData["SuccessMessage"] = "Profile updated successfully!";
+                // Update the tracked entity (currentDoctor) with form values to avoid EF tracking conflict
+                currentDoctor.FirstName = doctor.FirstName;
+                currentDoctor.LastName = doctor.LastName;
+                currentDoctor.Specialization = doctor.Specialization;
+                currentDoctor.ContactNumber = doctor.ContactNumber;
+                currentDoctor.Email = doctor.Email;
+                currentDoctor.LicenseNumber = doctor.LicenseNumber;
+                currentDoctor.Address = doctor.Address;
+                currentDoctor.ConsultationFee = doctor.ConsultationFee;
+
+                await _doctorService.UpdateDoctorAsync(currentDoctor);
+                if (profileImage != null)
+                {
+                    var imageUrl = await _imageService.UploadImageAsync("Doctor", currentDoctor.Id, "profile", profileImage);
+                    if (string.IsNullOrEmpty(imageUrl))
+                    {
+                        TempData["WarningMessage"] = "Profile updated, but the photo could not be saved. Please try again or use a different image (JPG, PNG, GIF, WebP, max 5MB).";
+                    }
+                }
+                if (TempData["WarningMessage"] == null)
+                    TempData["SuccessMessage"] = "Profile updated successfully!";
                 return RedirectToAction(nameof(Profile));
             }
             catch (Exception ex)
@@ -126,7 +149,8 @@ public class DoctorDashboardController : Controller
             }
         }
 
-        var profile = await _dashboardService.GetDoctorProfileAsync(doctor.Id);
+        var profile = await _dashboardService.GetDoctorProfileAsync(currentDoctor.Id);
+        ViewBag.ProfileImageUrl = await _imageService.GetImageUrlAsync("Doctor", doctor.Id, "profile");
         return View(profile);
     }
 
