@@ -83,7 +83,7 @@ public class ProcedureWorkflowService : IProcedureWorkflowService
         {
             var query = _context.ProcedureRequests
                 .AsNoTracking()
-                .Where(pr => pr.Status == ProcedureStatusEnum.Requested)
+                .Where(pr => pr.Status == ProcedureStatusEnum.Requested && pr.DoctorId == doctorId)
                 .OrderByDescending(pr => pr.CreatedDate);
 
             var totalCount = await query.CountAsync(cancellationToken);

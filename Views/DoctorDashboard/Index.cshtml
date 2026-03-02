@@ -29,62 +29,79 @@
 }
 
 <!-- Overview Cards -->
-<div class="row">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="dashboard-card">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <p class="text-muted mb-2 fw-semibold">Today's Appointments</p>
-                    <h2 class="mb-0 fw-bold">@(stats?["TodayAppointments"] ?? 0)</h2>
-                    <small class="text-info"><i class="bi bi-calendar-day"></i> Scheduled</small>
-                </div>
-                <div class="dashboard-icon icon-primary">
+<div class="row g-4">
+    <div class="col-xl col-lg-4 col-md-6">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-card-content">
+                <div class="stat-card-icon">
                     <i class="bi bi-calendar-check"></i>
                 </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">Today's Appointments</span>
+                    <span class="stat-card-value">@(stats?["TodayAppointments"] ?? 0)</span>
+                    <span class="stat-card-meta">Scheduled</span>
+                </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="dashboard-card">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <p class="text-muted mb-2 fw-semibold">This Month</p>
-                    <h2 class="mb-0 fw-bold">@(stats?["ThisMonthAppointments"] ?? 0)</h2>
-                    <small class="text-success"><i class="bi bi-calendar-month"></i> Appointments</small>
+    <div class="col-xl col-lg-4 col-md-6">
+        <a asp-action="ProcedureRequests" class="stat-card-link">
+            <div class="stat-card stat-card-amber @((stats?["PendingProcedureRequests"] as int?) > 0 ? "stat-card-pulse" : "")">
+                <div class="stat-card-content">
+                    <div class="stat-card-icon">
+                        <i class="bi bi-file-earmark-medical"></i>
+                    </div>
+                    <div class="stat-card-body">
+                        <span class="stat-card-label">Procedure Requests</span>
+                        <span class="stat-card-value">@(stats?["PendingProcedureRequests"] ?? 0)</span>
+                        <span class="stat-card-meta">Awaiting approval</span>
+                    </div>
+                    @if ((stats?["PendingProcedureRequests"] as int?) > 0)
+                    {
+                        <span class="stat-card-badge">@stats["PendingProcedureRequests"]</span>
+                    }
                 </div>
-                <div class="dashboard-icon icon-success">
+            </div>
+        </a>
+    </div>
+    <div class="col-xl col-lg-4 col-md-6">
+        <div class="stat-card stat-card-teal">
+            <div class="stat-card-content">
+                <div class="stat-card-icon">
                     <i class="bi bi-calendar3"></i>
                 </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">This Month</span>
+                    <span class="stat-card-value">@(stats?["ThisMonthAppointments"] ?? 0)</span>
+                    <span class="stat-card-meta">Appointments</span>
+                </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="dashboard-card">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <p class="text-muted mb-2 fw-semibold">Total Patients</p>
-                    <h2 class="mb-0 fw-bold">@(stats?["TotalPatients"] ?? 0)</h2>
-                    <small class="text-info"><i class="bi bi-people"></i> Under Care</small>
-                </div>
-                <div class="dashboard-icon icon-info">
+    <div class="col-xl col-lg-4 col-md-6">
+        <div class="stat-card stat-card-blue">
+            <div class="stat-card-content">
+                <div class="stat-card-icon">
                     <i class="bi bi-people-fill"></i>
                 </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">Total Patients</span>
+                    <span class="stat-card-value">@(stats?["TotalPatients"] ?? 0)</span>
+                    <span class="stat-card-meta">Under care</span>
+                </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="dashboard-card">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <p class="text-muted mb-2 fw-semibold">Monthly Revenue</p>
-                    <h2 class="mb-0 fw-bold">₹@(stats?["MonthlyRevenue"] ?? 0)</h2>
-                    <small class="text-success"><i class="bi bi-currency-rupee"></i> This Month</small>
+    <div class="col-xl col-lg-4 col-md-6">
+        <div class="stat-card stat-card-emerald">
+            <div class="stat-card-content">
+                <div class="stat-card-icon">
+                    <i class="bi bi-currency-rupee"></i>
                 </div>
-                <div class="dashboard-icon icon-warning">
-                    <i class="bi bi-cash-stack"></i>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">Monthly Revenue</span>
+                    <span class="stat-card-value">₹@(string.Format("{0:N2}", stats?["MonthlyRevenue"] ?? 0))</span>
+                    <span class="stat-card-meta">This month</span>
                 </div>
             </div>
         </div>
@@ -110,6 +127,16 @@
                         <a asp-action="Patients" class="btn btn-outline-success w-100">
                             <i class="bi bi-people"></i><br>
                             My Patients
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-action="ProcedureRequests" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-file-earmark-medical"></i><br>
+                            Procedure Requests
+                            @if ((stats?["PendingProcedureRequests"] as int?) > 0)
+                            {
+                                <span class="badge bg-danger ms-1">@stats["PendingProcedureRequests"]</span>
+                            }
                         </a>
                     </div>
                     <div class="col-md-3 mb-3">

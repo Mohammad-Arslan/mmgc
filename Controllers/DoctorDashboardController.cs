@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MMGC.Data;
 using MMGC.Models;
 using MMGC.Services;
+using MMGC.Shared.Interfaces;
 
 namespace MMGC.Controllers;
 
@@ -12,17 +13,20 @@ public class DoctorDashboardController : Controller
 {
     private readonly IDoctorDashboardService _dashboardService;
     private readonly IDoctorService _doctorService;
+    private readonly IProcedureWorkflowService _procedureWorkflowService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<DoctorDashboardController> _logger;
 
     public DoctorDashboardController(
         IDoctorDashboardService dashboardService,
         IDoctorService doctorService,
+        IProcedureWorkflowService procedureWorkflowService,
         UserManager<ApplicationUser> userManager,
         ILogger<DoctorDashboardController> logger)
     {
         _dashboardService = dashboardService;
         _doctorService = doctorService;
+        _procedureWorkflowService = procedureWorkflowService;
         _userManager = userManager;
         _logger = logger;
     }
@@ -60,7 +64,8 @@ public class DoctorDashboardController : Controller
                 { "ThisMonthAppointments", 0 },
                 { "TotalProcedures", 0 },
                 { "TotalPatients", 0 },
-                { "MonthlyRevenue", 0 }
+                { "MonthlyRevenue", 0 },
+                { "PendingProcedureRequests", 0 }
             };
             ViewBag.RecentAppointments = new List<Appointment>();
             return View(new Doctor { FirstName = "Doctor", LastName = "Profile Not Found" });
@@ -178,6 +183,66 @@ public class DoctorDashboardController : Controller
 
         ViewBag.Doctor = doctor;
         return View(patient);
+    }
+
+    // GET: DoctorDashboard/ProcedureRequests
+    public async Task<IActionResult> ProcedureRequests(int page = 1, int pageSize = 10)
+    {
+        var doctor = await GetCurrentDoctorAsync();
+        if (doctor == null) return NotFound();
+
+        var (items, totalCount) = await _procedureWorkflowService.GetPendingRequestsForDoctorAsync(doctor.Id, page, pageSize);
+        ViewBag.Doctor = doctor;
+        ViewBag.TotalCount = totalCount;
+        ViewBag.Page = page;
+        ViewBag.PageSize = pageSize;
+        ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return View(items);
+    }
+
+    // POST: DoctorDashboard/ApproveProcedureRequest/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApproveProcedureRequest(int id, string? approvalComments, DateTime? scheduledDate)
+    {
+        var doctor = await GetCurrentDoctorAsync();
+        if (doctor == null) return NotFound();
+
+        try
+        {
+            await _procedureWorkflowService.ApproveProcedureRequestAsync(id, doctor.Id, approvalComments, scheduledDate);
+            TempData["SuccessMessage"] = "Procedure request approved successfully.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error approving procedure request {Id}", id);
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(ProcedureRequests));
+    }
+
+    // POST: DoctorDashboard/RejectProcedureRequest/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RejectProcedureRequest(int id, string rejectionReason)
+    {
+        var doctor = await GetCurrentDoctorAsync();
+        if (doctor == null) return NotFound();
+
+        try
+        {
+            await _procedureWorkflowService.RejectProcedureRequestAsync(id, doctor.Id, rejectionReason ?? "No reason provided.");
+            TempData["SuccessMessage"] = "Procedure request rejected.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error rejecting procedure request {Id}", id);
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(ProcedureRequests));
     }
 }
 

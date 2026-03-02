@@ -140,6 +140,9 @@ public class DoctorDashboardService : IDoctorDashboardService
             .Where(p => p.DoctorId == doctorId && p.ProcedureDate >= thisMonth && p.Status == "Completed")
             .SumAsync(p => (decimal?)p.ProcedureFee) ?? 0;
 
+        var pendingProcedureRequests = await _context.ProcedureRequests
+            .CountAsync(pr => pr.DoctorId == doctorId && pr.Status == MMGC.Shared.Enums.ProcedureStatusEnum.Requested);
+
         return new Dictionary<string, object>
         {
             { "TotalAppointments", totalAppointments },
@@ -147,7 +150,8 @@ public class DoctorDashboardService : IDoctorDashboardService
             { "ThisMonthAppointments", thisMonthAppointments },
             { "TotalProcedures", totalProcedures },
             { "TotalPatients", totalPatients },
-            { "MonthlyRevenue", monthlyRevenue }
+            { "MonthlyRevenue", monthlyRevenue },
+            { "PendingProcedureRequests", pendingProcedureRequests }
         };
     }
 }
