@@ -21,7 +21,7 @@ public class AvailabilityService : IAvailabilityService
         _logger = logger;
     }
 
-    public async Task<List<AppointmentSlotDto>> GetAvailableSlotsAsync(int doctorId, DateTime date, CancellationToken cancellationToken = default)
+    public async Task<List<AppointmentSlotDto>> GetSlotsWithStatusAsync(int doctorId, DateTime date, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -29,9 +29,12 @@ public class AvailabilityService : IAvailabilityService
             if (doctor == null)
                 throw new EntityNotFoundException(nameof(Models.Doctor), doctorId);
 
-            var dateStart = date.Date;
-            var dateEnd = date.Date.AddDays(1);
+            var dateOnly = date.Date;
+            var dateStart = dateOnly;
+            var dateEnd = dateOnly.AddDays(1);
+            var now = DateTime.Now;
 
+            // Get booked appointments for the date
             var bookedSlots = await _context.Appointments
                 .AsNoTracking()
                 .Where(a => a.DoctorId == doctorId && a.AppointmentDate >= dateStart && a.AppointmentDate < dateEnd && a.StatusEnum != AppointmentStatusEnum.Cancelled)
@@ -39,41 +42,79 @@ public class AvailabilityService : IAvailabilityService
                 .Select(a => new { a.AppointmentDate, a.AppointmentEndTime })
                 .ToListAsync(cancellationToken);
 
-            var slots = new List<AppointmentSlotDto>();
-            var slotDuration = SystemConstants.APPOINTMENT_SLOT_DURATION_MINUTES;
-            var workStart = date.Date.AddHours(9);
-            var workEnd = date.Date.AddHours(17);
-            var currentTime = workStart;
+            // Get doctor-defined schedules for this date (date-specific)
+            var schedules = await _context.DoctorSchedules
+                .AsNoTracking()
+                .Where(ds => ds.DoctorId == doctorId && ds.ScheduleDate.Date == dateOnly && ds.IsAvailable)
+                .OrderBy(ds => ds.StartTime)
+                .ToListAsync(cancellationToken);
 
-            while (currentTime.AddMinutes(slotDuration) <= workEnd)
+            // Build time blocks: from DoctorSchedules or fallback to 9 AM - 5 PM
+            var blocks = new List<(TimeSpan Start, TimeSpan End)>();
+            if (schedules.Count > 0)
             {
-                var slotEnd = currentTime.AddMinutes(slotDuration);
-                var hasConflict = bookedSlots.Any(bs =>
+                foreach (var s in schedules)
                 {
-                    var bsEnd = bs.AppointmentEndTime ?? bs.AppointmentDate.AddMinutes(slotDuration);
-                    return !(slotEnd <= bs.AppointmentDate || currentTime >= bsEnd);
-                });
-
-                if (!hasConflict)
-                {
-                    slots.Add(new AppointmentSlotDto
-                    {
-                        SlotId = $"{doctorId}_{currentTime:yyyyMMddHHmm}",
-                        ScheduleId = 0, // Not applicable for generated slots
-                        ScheduleDate = date.Date,
-                        StartTime = currentTime.TimeOfDay,
-                        EndTime = slotEnd.TimeOfDay,
-                        IsAvailable = true,
-                        DoctorId = doctorId,
-                        DoctorName = doctor.FullName,
-                        Specialization = doctor.Specialization
-                    });
+                    if (s.EndTime > s.StartTime)
+                        blocks.Add((s.StartTime, s.EndTime));
                 }
-
-                currentTime = currentTime.AddMinutes(slotDuration);
+            }
+            if (blocks.Count == 0)
+            {
+                // Fallback: Mon-Fri 9-5, weekend = no slots
+                if (dateOnly.DayOfWeek != DayOfWeek.Saturday && dateOnly.DayOfWeek != DayOfWeek.Sunday)
+                    blocks.Add((new TimeSpan(9, 0, 0), new TimeSpan(17, 0, 0)));
             }
 
-            return slots;
+            var slotDuration = SystemConstants.APPOINTMENT_SLOT_DURATION_MINUTES;
+            var slotSet = new HashSet<TimeSpan>(); // Deduplicate by start time
+            var slots = new List<AppointmentSlotDto>();
+
+            foreach (var (blockStart, blockEnd) in blocks)
+            {
+                var current = dateOnly.Add(blockStart);
+                var end = dateOnly.Add(blockEnd);
+
+                while (current.AddMinutes(slotDuration) <= end)
+                {
+                    var slotEnd = current.AddMinutes(slotDuration);
+                    if (slotSet.Add(current.TimeOfDay))
+                    {
+                        var isBooked = bookedSlots.Any(bs =>
+                        {
+                            var bsEnd = bs.AppointmentEndTime ?? bs.AppointmentDate.AddMinutes(slotDuration);
+                            return !(slotEnd <= bs.AppointmentDate || current >= bsEnd);
+                        });
+
+                        SlotStatusEnum status;
+                        if (dateOnly < now.Date)
+                            status = SlotStatusEnum.Past;
+                        else if (dateOnly == now.Date && slotEnd <= now)
+                            status = SlotStatusEnum.Past;
+                        else if (isBooked)
+                            status = SlotStatusEnum.Booked;
+                        else
+                            status = SlotStatusEnum.Available;
+
+                        slots.Add(new AppointmentSlotDto
+                        {
+                            SlotId = $"{doctorId}_{current:yyyyMMddHHmm}",
+                            ScheduleId = 0,
+                            ScheduleDate = dateOnly,
+                            StartTime = current.TimeOfDay,
+                            EndTime = slotEnd.TimeOfDay,
+                            IsAvailable = status == SlotStatusEnum.Available,
+                            DoctorId = doctorId,
+                            DoctorName = doctor.FullName,
+                            Specialization = doctor.Specialization,
+                            SlotStatus = status
+                        });
+                    }
+                    current = current.AddMinutes(slotDuration);
+                }
+            }
+
+            return slots.OrderBy(s => s.StartTime).ToList();
         }
         catch (EntityNotFoundException)
         {
@@ -81,24 +122,36 @@ public class AvailabilityService : IAvailabilityService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving available slots for doctor {DoctorId}", doctorId);
+            _logger.LogError(ex, "Error retrieving slots for doctor {DoctorId}", doctorId);
             throw;
         }
     }
 
-    public async Task<List<AppointmentSlotDto>> GetAvailableSlotsInRangeAsync(int doctorId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
+    public async Task<List<AppointmentSlotDto>> GetAvailableSlotsAsync(int doctorId, DateTime date, CancellationToken cancellationToken = default)
+    {
+        var allSlots = await GetSlotsWithStatusAsync(doctorId, date, cancellationToken);
+        return allSlots.Where(s => s.SlotStatus == SlotStatusEnum.Available).ToList();
+    }
+
+    public async Task<List<AppointmentSlotDto>> GetSlotsWithStatusInRangeAsync(int doctorId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
         var allSlots = new List<AppointmentSlotDto>();
         var currentDate = startDate.Date;
 
         while (currentDate <= endDate.Date)
         {
-            var slotsForDay = await GetAvailableSlotsAsync(doctorId, currentDate, cancellationToken);
+            var slotsForDay = await GetSlotsWithStatusAsync(doctorId, currentDate, cancellationToken);
             allSlots.AddRange(slotsForDay);
             currentDate = currentDate.AddDays(1);
         }
 
         return allSlots;
+    }
+
+    public async Task<List<AppointmentSlotDto>> GetAvailableSlotsInRangeAsync(int doctorId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
+    {
+        var allSlots = await GetSlotsWithStatusInRangeAsync(doctorId, startDate, endDate, cancellationToken);
+        return allSlots.Where(s => s.SlotStatus == SlotStatusEnum.Available).ToList();
     }
 
     public async Task<bool> IsSlotAvailableAsync(int doctorId, DateTime startTime, DateTime endTime, CancellationToken cancellationToken = default)
@@ -206,6 +259,16 @@ public class AvailabilityService : IAvailabilityService
     {
         try
         {
+            var dateOnly = date.Date;
+            var schedule = await _context.DoctorSchedules
+                .AsNoTracking()
+                .Where(ds => ds.DoctorId == doctorId && ds.ScheduleDate.Date == dateOnly && ds.IsAvailable)
+                .OrderBy(ds => ds.StartTime)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (schedule != null)
+                return (schedule.StartTime, schedule.EndTime);
+
             // Default: Monday-Friday 9 AM to 5 PM
             if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
                 return (new TimeSpan(9, 0, 0), new TimeSpan(17, 0, 0));

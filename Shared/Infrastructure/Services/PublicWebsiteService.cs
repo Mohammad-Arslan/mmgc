@@ -141,11 +141,12 @@ public class DoctorDirectoryService : IDoctorDirectoryService
             if (doctor == null)
                 return null;
 
-            // Use same slot logic as Appointments/Slots page: 9 AM-5 PM, 30-min slots, excludes booked appointments
+            // Get all slots with status (Available, Booked, Past) for next 7 days
             var startDate = DateTime.Today;
             var endDate = DateTime.Today.AddDays(7);
-            var availableSlots = await _availabilityService.GetAvailableSlotsInRangeAsync(
+            var allSlots = await _availabilityService.GetSlotsWithStatusInRangeAsync(
                 doctorId, startDate, endDate, cancellationToken);
+            var availableCount = allSlots.Count(s => s.SlotStatus == Shared.Enums.SlotStatusEnum.Available);
 
             return new DoctorProfileDto
             {
@@ -163,8 +164,8 @@ public class DoctorDirectoryService : IDoctorDirectoryService
                 Biography = null, // TODO: Add biography field to Doctor model if needed
                 TotalAppointmentsCompleted = doctor.Appointments.Count(a => a.Status == "Completed"),
                 AverageRating = 4.5, // TODO: Implement actual rating
-                AvailableSlotsCount = availableSlots.Count,
-                AvailableSlots = availableSlots
+                AvailableSlotsCount = availableCount,
+                AvailableSlots = allSlots
             };
         }
         catch (Exception ex)

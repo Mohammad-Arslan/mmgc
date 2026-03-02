@@ -12,10 +12,9 @@ public class DoctorSchedule
     [Display(Name = "Doctor")]
     public int DoctorId { get; set; }
 
-    [Required]
     [Display(Name = "Day of Week")]
     [StringLength(20)]
-    public string DayOfWeek { get; set; } = string.Empty; // Monday, Tuesday, etc.
+    public string DayOfWeek { get; set; } = string.Empty; // Derived from ScheduleDate
 
     /// <summary>
     /// Specific date for the schedule (for slot-based scheduling).

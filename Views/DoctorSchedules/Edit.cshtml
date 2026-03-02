@@ -1,0 +1,90 @@
+@model MMGC.Models.DoctorSchedule
+@{
+    ViewData["Title"] = "Edit Time Slot";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-pencil-square"></i> Edit Time Slot</h2>
+            <p>Update availability</p>
+        </div>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        var doctorsList = ViewBag.DoctorsList as IEnumerable<MMGC.Models.Doctor>;
+                        <div class="mb-3">
+                            <label asp-for="DoctorId" class="form-label"></label>
+                            <select asp-for="DoctorId" class="form-select" id="DoctorId" required>
+                                <option value="">-- Select Doctor --</option>
+                                @if (doctorsList != null)
+                                {
+                                    @foreach (var doctor in doctorsList)
+                                    {
+                                        var isSelected = Model.DoctorId == doctor.Id;
+                                        <option value="@doctor.Id" selected="@isSelected">@doctor.FullName - @doctor.Specialization</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="DoctorId" class="text-danger"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <input type="hidden" asp-for="DoctorId" />
+                    }
+
+                    <div class="mb-3">
+                        <label asp-for="ScheduleDate" class="form-label"></label>
+                        <input asp-for="ScheduleDate" class="form-control" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="ScheduleDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="StartTime" class="form-label"></label>
+                            <input asp-for="StartTime" class="form-control" type="time" step="1800" />
+                            <span asp-validation-for="StartTime" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="EndTime" class="form-label"></label>
+                            <input asp-for="EndTime" class="form-control" type="time" step="1800" />
+                            <span asp-validation-for="EndTime" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input asp-for="IsAvailable" class="form-check-input" />
+                            <label asp-for="IsAvailable" class="form-check-label"></label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

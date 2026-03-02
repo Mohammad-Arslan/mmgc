@@ -92,6 +92,12 @@
                             <span>My Appointments</span>
                         </a>
                     </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" asp-controller="DoctorSchedules" asp-action="Index">
+                            <i class="bi bi-calendar-week"></i>
+                            <span>My Time Slots</span>
+                        </a>
+                    </li>
                 }
                 else if (User.IsInRole("Admin") || User.IsInRole("ReceptionStaff"))
                 {
@@ -169,6 +175,7 @@
                         <ul class="collapse sidebar-submenu" id="doctorsSubmenu">
                             <li><a asp-controller="Doctors" asp-action="Index">All Doctors</a></li>
                             <li><a asp-controller="Doctors" asp-action="Create">Add Doctor</a></li>
+                            <li><a asp-controller="DoctorSchedules" asp-action="Index">Time Slots</a></li>
                         </ul>
                     </li>
                 }

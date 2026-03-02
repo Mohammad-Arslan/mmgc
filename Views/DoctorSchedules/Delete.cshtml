@@ -1,0 +1,42 @@
+@model MMGC.Models.DoctorSchedule
+@{
+    ViewData["Title"] = "Delete Time Slot";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-trash"></i> Delete Time Slot</h2>
+            <p>Remove this availability block</p>
+        </div>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> Are you sure you want to remove this time slot?
+        </div>
+        <dl class="row">
+            @if (User.IsInRole("Admin"))
+            {
+                <dt class="col-sm-3">Doctor</dt>
+                <dd class="col-sm-9">@(Model.Doctor?.FullName ?? "N/A")</dd>
+            }
+            <dt class="col-sm-3">Date</dt>
+            <dd class="col-sm-9">@Model.ScheduleDate.ToString("dddd, MMMM dd, yyyy")</dd>
+            <dt class="col-sm-3">Time</dt>
+            <dd class="col-sm-9">@Model.StartTime.ToString(@"hh\:mm") - @Model.EndTime.ToString(@"hh\:mm")</dd>
+        </dl>
+        <form asp-action="Delete" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</div>

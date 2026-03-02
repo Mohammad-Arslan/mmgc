@@ -9,7 +9,14 @@ namespace MMGC.Shared.Interfaces;
 public interface IAvailabilityService
 {
     /// <summary>
-    /// Retrieves available appointment slots for a specific doctor on a given date.
+    /// Retrieves all appointment slots for a doctor on a date with status (Available, Booked, Past).
+    /// Use for display; only Available slots can be booked.
+    /// </summary>
+    Task<List<AppointmentSlotDto>> GetSlotsWithStatusAsync(int doctorId, DateTime date, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves available (bookable) appointment slots for a specific doctor on a given date.
+    /// Excludes Booked and Past slots.
     /// </summary>
     /// <param name="doctorId">The doctor's ID.</param>
     /// <param name="date">The date to check availability.</param>
@@ -18,7 +25,12 @@ public interface IAvailabilityService
     Task<List<AppointmentSlotDto>> GetAvailableSlotsAsync(int doctorId, DateTime date, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves available slots within a date range.
+    /// Retrieves all slots with status within a date range.
+    /// </summary>
+    Task<List<AppointmentSlotDto>> GetSlotsWithStatusInRangeAsync(int doctorId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves available (bookable) slots within a date range.
     /// </summary>
     Task<List<AppointmentSlotDto>> GetAvailableSlotsInRangeAsync(int doctorId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
 

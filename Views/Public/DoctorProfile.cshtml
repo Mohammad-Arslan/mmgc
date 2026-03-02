@@ -62,19 +62,41 @@ else
                     <div class="card border-0 shadow-sm rounded-3">
                         <div class="card-body">
                             <h5 class="card-title mb-4">
-                                <i class="bi bi-calendar-check me-2"></i>Available Appointments
+                                <i class="bi bi-calendar-check me-2"></i>Appointment Slots
                             </h5>
                             @if (Model.AvailableSlots != null && Model.AvailableSlots.Any())
                             {
                                 <div class="row g-3">
                                     @foreach (var slot in Model.AvailableSlots.Take(12))
                                     {
+                                        var isAvailable = slot.SlotStatus == MMGC.Shared.Enums.SlotStatusEnum.Available;
+                                        var isBooked = slot.SlotStatus == MMGC.Shared.Enums.SlotStatusEnum.Booked;
+                                        var isPast = slot.SlotStatus == MMGC.Shared.Enums.SlotStatusEnum.Past;
                                         <div class="col-md-4">
-                                            <a href="/Appointments/Slots?DoctorId=@Model.Id&SelectedDate=@slot.ScheduleDate.ToString("yyyy-MM-dd")" 
-                                               class="btn btn-outline-primary w-100 @(slot.IsAvailable ? "" : "disabled")">
-                                                @slot.ScheduleDate.ToString("ddd, MMM d")<br>
-                                                <small>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</small>
-                                            </a>
+                                            @if (isAvailable)
+                                            {
+                                                <a href="/Appointments/Slots?DoctorId=@Model.Id&SelectedDate=@slot.ScheduleDate.ToString("yyyy-MM-dd")" 
+                                                   class="btn btn-outline-primary w-100 text-start">
+                                                    @slot.ScheduleDate.ToString("ddd, MMM d")<br>
+                                                    <small>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</small>
+                                                    <span class="badge bg-success ms-1">Available</span>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <div class="btn btn-outline-secondary w-100 text-start disabled">
+                                                    @slot.ScheduleDate.ToString("ddd, MMM d")<br>
+                                                    <small>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</small>
+                                                    @if (isBooked)
+                                                    {
+                                                        <span class="badge bg-secondary ms-1">Booked</span>
+                                                    }
+                                                    else if (isPast)
+                                                    {
+                                                        <span class="badge bg-light text-dark ms-1">Past</span>
+                                                    }
+                                                </div>
+                                            }
                                         </div>
                                     }
                                 </div>
@@ -85,7 +107,7 @@ else
                             }
                             else
                             {
-                                <p class="text-muted">No available slots in the next 7 days. Please check back later or contact reception.</p>
+                                <p class="text-muted">No slots in the next 7 days. The doctor may not have defined availability. Please check back later or contact reception.</p>
                                 <a href="/Appointments/Slots?DoctorId=@Model.Id&SelectedDate=@DateTime.Today.ToString("yyyy-MM-dd")" class="btn btn-primary">Book Appointment</a>
                             }
                         </div>

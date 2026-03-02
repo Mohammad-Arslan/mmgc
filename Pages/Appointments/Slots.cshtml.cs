@@ -31,7 +31,11 @@ public class SlotsModel : PageModel
     [BindProperty]
     public string? Reason { get; set; }
 
-    public List<AppointmentSlotDto> AvailableSlots { get; set; } = new();
+    /// <summary>All slots with status (Available, Booked, Past) for display.</summary>
+    public List<AppointmentSlotDto> AllSlots { get; set; } = new();
+
+    /// <summary>Only bookable (Available) slots.</summary>
+    public List<AppointmentSlotDto> AvailableSlots => AllSlots.Where(s => s.SlotStatus == Shared.Enums.SlotStatusEnum.Available).ToList();
     public string? DoctorName { get; set; }
     public string? Specialization { get; set; }
     public string? ErrorMessage { get; set; }
@@ -82,12 +86,12 @@ public class SlotsModel : PageModel
                 return Page();
             }
 
-            // Get available slots (includes doctor name and specialization)
-            AvailableSlots = await _availabilityService.GetAvailableSlotsAsync(DoctorId, selectedDateTime);
-            if (AvailableSlots.Count > 0)
+            // Get all slots with status (Available, Booked, Past)
+            AllSlots = await _availabilityService.GetSlotsWithStatusAsync(DoctorId, selectedDateTime);
+            if (AllSlots.Count > 0)
             {
-                DoctorName = AvailableSlots[0].DoctorName;
-                Specialization = AvailableSlots[0].Specialization;
+                DoctorName = AllSlots[0].DoctorName;
+                Specialization = AllSlots[0].Specialization;
             }
 
             return Page();
@@ -131,10 +135,10 @@ public class SlotsModel : PageModel
                 return Page();
             }
 
-            var slots = await _availabilityService.GetAvailableSlotsAsync(DoctorId, selectedDateTime);
+            var slots = await _availabilityService.GetSlotsWithStatusAsync(DoctorId, selectedDateTime);
             var selectedSlot = slots.FirstOrDefault(s => s.SlotId == SelectedSlotId);
 
-            if (selectedSlot == null)
+            if (selectedSlot == null || selectedSlot.SlotStatus != Shared.Enums.SlotStatusEnum.Available)
             {
                 ErrorMessage = "Selected slot is no longer available.";
                 return Page();
