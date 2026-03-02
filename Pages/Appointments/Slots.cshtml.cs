@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using MMGC.Data;
 using MMGC.Shared.DTOs;
 using MMGC.Shared.Interfaces;
 
@@ -14,6 +16,7 @@ namespace MMGC.Pages.Appointments;
 public class SlotsModel : PageModel
 {
     private readonly IAvailabilityService _availabilityService;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<SlotsModel> _logger;
 
     [BindProperty(SupportsGet = true)]
@@ -23,7 +26,7 @@ public class SlotsModel : PageModel
     public string? SelectedDate { get; set; }
 
     [BindProperty]
-    public int? SelectedSlotId { get; set; }
+    public string? SelectedSlotId { get; set; }
 
     [BindProperty]
     public string? Reason { get; set; }
@@ -38,10 +41,20 @@ public class SlotsModel : PageModel
 
     public SlotsModel(
         IAvailabilityService availabilityService,
+        ApplicationDbContext context,
         ILogger<SlotsModel> logger)
     {
         _availabilityService = availabilityService;
+        _context = context;
         _logger = logger;
+    }
+
+    private async Task<int?> GetPatientIdAsync()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId)) return null;
+        var patient = await _context.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId);
+        return patient?.Id;
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -69,12 +82,13 @@ public class SlotsModel : PageModel
                 return Page();
             }
 
-            // Get available slots
+            // Get available slots (includes doctor name and specialization)
             AvailableSlots = await _availabilityService.GetAvailableSlotsAsync(DoctorId, selectedDateTime);
-
-            // TODO: Get doctor details from database
-            DoctorName = "Dr. John Doe"; // Placeholder
-            Specialization = "General Practice"; // Placeholder
+            if (AvailableSlots.Count > 0)
+            {
+                DoctorName = AvailableSlots[0].DoctorName;
+                Specialization = AvailableSlots[0].Specialization;
+            }
 
             return Page();
         }
@@ -90,7 +104,7 @@ public class SlotsModel : PageModel
     {
         try
         {
-            if (DoctorId <= 0 || !SelectedSlotId.HasValue)
+            if (DoctorId <= 0 || string.IsNullOrWhiteSpace(SelectedSlotId))
             {
                 ErrorMessage = "Please select a valid slot.";
                 return Page();
@@ -102,8 +116,13 @@ public class SlotsModel : PageModel
                 return Page();
             }
 
-            // TODO: Get patient ID from current user
-            int patientId = 1; // Placeholder
+            // Get patient ID from current user
+            var patientId = await GetPatientIdAsync();
+            if (!patientId.HasValue)
+            {
+                ErrorMessage = "Patient profile not found. Please ensure your account is linked to a patient record.";
+                return Page();
+            }
 
             // Get slot details to extract start and end time
             if (!DateTime.TryParse(SelectedDate, out var selectedDateTime))
@@ -113,7 +132,7 @@ public class SlotsModel : PageModel
             }
 
             var slots = await _availabilityService.GetAvailableSlotsAsync(DoctorId, selectedDateTime);
-            var selectedSlot = slots.FirstOrDefault();
+            var selectedSlot = slots.FirstOrDefault(s => s.SlotId == SelectedSlotId);
 
             if (selectedSlot == null)
             {
@@ -121,12 +140,16 @@ public class SlotsModel : PageModel
                 return Page();
             }
 
+            // Convert TimeSpan to DateTime by combining with the selected date
+            var startDateTime = selectedSlot.ScheduleDate.Date + selectedSlot.StartTime;
+            var endDateTime = selectedSlot.ScheduleDate.Date + selectedSlot.EndTime;
+
             // Book the appointment
             var appointmentId = await _availabilityService.ReserveSlotAsync(
                 DoctorId,
-                patientId,
-                selectedSlot.StartTime,
-                selectedSlot.EndTime);
+                patientId.Value,
+                startDateTime,
+                endDateTime);
 
             SuccessMessage = $"Appointment booked successfully! Your appointment ID is {appointmentId}.";
             

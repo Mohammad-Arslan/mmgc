@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using MMGC.Data;
 using MMGC.Shared.DTOs;
 using MMGC.Shared.Interfaces;
 using System.Security.Claims;
@@ -15,6 +17,7 @@ namespace MMGC.Pages.Patient;
 public class DashboardModel : PageModel
 {
     private readonly IPatientDashboardService _dashboardService;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<DashboardModel> _logger;
 
     public PatientDashboardDto? Dashboard { get; set; }
@@ -27,32 +30,44 @@ public class DashboardModel : PageModel
     public string? ErrorMessage { get; set; }
     public bool IsLoading { get; set; } = true;
 
-    public DashboardModel(IPatientDashboardService dashboardService, ILogger<DashboardModel> logger)
+    public DashboardModel(
+        IPatientDashboardService dashboardService,
+        ApplicationDbContext context,
+        ILogger<DashboardModel> logger)
     {
         _dashboardService = dashboardService;
+        _context = context;
         _logger = logger;
+    }
+
+    private async Task<int?> ResolvePatientIdAsync()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim)) return null;
+
+        var patient = await _context.Patients
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.UserId == userIdClaim);
+        if (patient != null) return patient.Id;
+
+        var queryId = HttpContext.Request.Query["patientId"].ToString();
+        if (!string.IsNullOrEmpty(queryId) && int.TryParse(queryId, out var parsedId))
+            return parsedId;
+        return null;
     }
 
     public async Task<IActionResult> OnGetAsync()
     {
         try
         {
-            // Get current user's patient ID
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
+            var patientId = await ResolvePatientIdAsync();
+            if (patientId == null)
             {
-                ErrorMessage = "Unable to identify current user.";
-                return Unauthorized();
+                ErrorMessage = "Patient profile not found. Please ensure your account is linked to a patient record. Contact reception if you need assistance.";
+                IsLoading = false;
+                return Page();
             }
-
-            // In a real system, you'd map the UserId to PatientId
-            // For now, we'll use the first parameter or query string
-            CurrentPatientId = HttpContext.Request.Query["patientId"].ToString() switch
-            {
-                "" or null => 1, // Default for demo
-                string id when int.TryParse(id, out var parsedId) => parsedId,
-                _ => 1
-            };
+            CurrentPatientId = patientId.Value;
 
             // Load dashboard data
             Dashboard = await _dashboardService.GetPatientDashboardAsync(CurrentPatientId);
@@ -82,6 +97,9 @@ public class DashboardModel : PageModel
     /// </summary>
     public async Task<IActionResult> OnGetAppointmentHistoryAsync(int pageNumber = 1)
     {
+        var patientId = await ResolvePatientIdAsync();
+        if (patientId == null) return new JsonResult(new { error = "Unauthorized" }) { StatusCode = 401 };
+        CurrentPatientId = patientId.Value;
         try
         {
             var (items, totalCount) = await _dashboardService.GetAppointmentHistoryAsync(
@@ -106,6 +124,9 @@ public class DashboardModel : PageModel
     /// </summary>
     public async Task<IActionResult> OnGetPrescriptionHistoryAsync(int pageNumber = 1)
     {
+        var patientId = await ResolvePatientIdAsync();
+        if (patientId == null) return new JsonResult(new { error = "Unauthorized" }) { StatusCode = 401 };
+        CurrentPatientId = patientId.Value;
         try
         {
             var (items, totalCount) = await _dashboardService.GetPrescriptionHistoryAsync(
@@ -130,6 +151,9 @@ public class DashboardModel : PageModel
     /// </summary>
     public async Task<IActionResult> OnGetLabTestHistoryAsync(int pageNumber = 1)
     {
+        var patientId = await ResolvePatientIdAsync();
+        if (patientId == null) return new JsonResult(new { error = "Unauthorized" }) { StatusCode = 401 };
+        CurrentPatientId = patientId.Value;
         try
         {
             var (items, totalCount) = await _dashboardService.GetLabTestHistoryAsync(
@@ -154,6 +178,9 @@ public class DashboardModel : PageModel
     /// </summary>
     public async Task<IActionResult> OnGetOutstandingInvoicesAsync(int pageNumber = 1)
     {
+        var patientId = await ResolvePatientIdAsync();
+        if (patientId == null) return new JsonResult(new { error = "Unauthorized" }) { StatusCode = 401 };
+        CurrentPatientId = patientId.Value;
         try
         {
             var (items, totalCount) = await _dashboardService.GetOutstandingInvoicesAsync(

@@ -1,0 +1,66 @@
+@model List<MMGC.Shared.DTOs.InvoiceDto>
+@using MMGC.Shared.DTOs
+@{
+    ViewData["Title"] = "My Invoices";
+    Layout = "_PatientLayout";
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+    var totalCount = ViewBag.TotalCount as int? ?? 0;
+}
+
+<div class="container-fluid py-4">
+    <h2 class="mb-4"><i class="bi bi-receipt"></i> My Invoices</h2>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No invoices found.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inv in Model)
+                    {
+                        <tr>
+                            <td>@inv.TransactionDate.ToString("MMM dd, yyyy")</td>
+                            <td>@inv.Description</td>
+                            <td>PKR @inv.Amount.ToString("N0")</td>
+                            <td><span class="badge bg-@(inv.Status == "Paid" ? "success" : "warning")">@inv.Status</span></td>
+                            <td>
+                                <a href="/patient/documents/DownloadInvoice/@inv.Id" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <nav class="mt-3">
+                <ul class="pagination">
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="?page=@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

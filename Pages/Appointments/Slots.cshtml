@@ -2,7 +2,7 @@
 @model MMGC.Pages.Appointments.SlotsModel
 @{
     ViewData["Title"] = "Book Appointment";
-    Layout = "_Layout";
+    Layout = "_PatientLayout";
 }
 
 <div class="container py-5">
@@ -16,6 +16,13 @@
                 </div>
                 <div class="card-body">
                     <!-- Doctor Info -->
+                    @if (Model.DoctorId <= 0)
+                    {
+                        <div class="alert alert-warning mb-4">
+                            <i class="bi bi-person-badge"></i> <strong>No doctor selected.</strong>
+                            <a href="/doctors" class="alert-link">Browse our doctors</a> and click "View Profile & Book" to select an appointment slot.
+                        </div>
+                    }
                     @if (Model.DoctorId > 0)
                     {
                         <div class="alert alert-info mb-4">
@@ -48,6 +55,8 @@
                     }
 
                     <form method="post">
+                        <input type="hidden" name="DoctorId" value="@Model.DoctorId" />
+                        <input type="hidden" name="SelectedDate" value="@Model.SelectedDate" />
                         <!-- Date Selection -->
                         <div class="mb-4">
                             <label for="selectedDate" class="form-label">Select Date</label>
@@ -82,7 +91,7 @@
                                                        value="@slot.SlotId"
                                                        required>
                                                 <label class="form-check-label slot-label" for="slot_@slot.SlotId">
-                                                    <strong>@slot.StartTime.ToString("h:mm tt")</strong> - @slot.EndTime.ToString("h:mm tt")
+                                                    <strong>@(DateTime.Today.Add(slot.StartTime).ToString("h:mm tt"))</strong> - @(DateTime.Today.Add(slot.EndTime).ToString("h:mm tt"))
                                                 </label>
                                             </div>
                                         </div>
@@ -133,7 +142,7 @@
                     <!-- Slot Availability Summary -->
                     <hr class="my-4"/>
                     <div class="alert alert-light small">
-                        <strong>Showing availability for:</strong> @DateTime.Parse(Model.SelectedDate ?? "").ToString("dddd, MMMM dd, yyyy")<br/>
+                        <strong>Showing availability for:</strong> @(DateTime.TryParse(Model.SelectedDate, out var dt) ? dt.ToString("dddd, MMMM dd, yyyy") : "Select a date")<br/>
                         <strong>Available slots:</strong> @Model.AvailableSlots.Count<br/>
                         <strong>Slot duration:</strong> 30 minutes
                     </div>

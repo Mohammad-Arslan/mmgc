@@ -1,7 +1,8 @@
 @model MMGC.Controllers.LoginViewModel
 
 @{
-    ViewData["Title"] = "Log in";
+    var isAdminLogin = ViewData["IsAdminLogin"] as bool? ?? false;
+    ViewData["Title"] = isAdminLogin ? "Staff Login" : "Patient Login";
     Layout = null;
 }
 
@@ -140,10 +141,10 @@
         <div class="login-header">
             <i class="bi bi-hospital"></i>
             <h2>MMGC Hospital</h2>
-            <p>Hospital Management System</p>
+            <p>@(isAdminLogin ? "Staff & Admin Portal" : "Patient Portal")</p>
         </div>
         <div class="login-body">
-            <form asp-action="Login" method="post">
+            <form asp-action="Login" method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                 
                 <div class="form-floating">

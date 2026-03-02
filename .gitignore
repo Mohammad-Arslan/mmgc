@@ -26,6 +26,9 @@ appsettings.*.json
 !appsettings.json
 !appsettings.example.json
 
+## Documentation
+docs/
+
 ## OS
 .DS_Store
 Thumbs.db

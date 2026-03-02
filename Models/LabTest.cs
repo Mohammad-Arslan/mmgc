@@ -80,4 +80,10 @@ public class LabTest
 
     [ForeignKey("ApprovedByDoctorId")]
     public virtual Doctor? ApprovedByDoctor { get; set; }
+
+    /// <summary>
+    /// Concurrency token for optimistic concurrency control.
+    /// </summary>
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 }

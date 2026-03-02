@@ -1,0 +1,309 @@
+@model MMGC.Shared.DTOs.HomepageDto
+@using MMGC.Shared.DTOs
+@{
+    ViewData["Title"] = "Home - MMGC Hospital";
+}
+
+<section class="hero-section bg-primary text-white py-5 position-relative overflow-hidden">
+    <div class="container position-relative">
+        <div class="row align-items-center min-vh-50 py-5">
+            <div class="col-lg-6 animate-fade-in-up">
+                <h1 class="display-4 fw-bold mb-4">Healthcare Excellence at Your Service</h1>
+                <p class="lead mb-4 opacity-90">
+                    MMGC Hospital provides comprehensive healthcare services with a team of experienced 
+                    doctors and state-of-the-art facilities.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/doctors" class="btn btn-light btn-lg px-4 py-3 rounded-pill shadow">
+                        <i class="bi bi-search me-2"></i>Find a Doctor
+                    </a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a href="/Patient/Dashboard" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">
+                            <i class="bi bi-speedometer2 me-2"></i>Go to Portal
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">
+                            <i class="bi bi-calendar-check me-2"></i>Book Appointment
+                        </a>
+                    }
+                </div>
+            </div>
+            <div class="col-lg-6 text-center animate-fade-in-up animate-delay-2">
+                <div class="hero-illustration">
+                    <i class="bi bi-heart-pulse-fill display-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="statistics-section py-5 bg-light" id="stats">
+    <div class="container">
+        <h2 class="text-center mb-5 animate-fade-in-up">By The Numbers</h2>
+        <div class="row text-center g-4">
+            <div class="col-md-3 col-6">
+                <div class="stat-box animate-fade-in-up animate-delay-1">
+                    <h3 class="display-5 text-primary fw-bold">@Model?.Statistics?.TotalDoctors</h3>
+                    <p class="text-muted">Experienced Doctors</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-box animate-fade-in-up animate-delay-2">
+                    <h3 class="display-5 text-primary fw-bold">@Model?.Statistics?.TotalPatients</h3>
+                    <p class="text-muted">Happy Patients</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-box animate-fade-in-up animate-delay-3">
+                    <h3 class="display-5 text-primary fw-bold">@Model?.Statistics?.CompletedAppointments</h3>
+                    <p class="text-muted">Successful Appointments</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-box animate-fade-in-up animate-delay-4">
+                    <h3 class="display-5 text-primary fw-bold">@Model?.Statistics?.Specializations</h3>
+                    <p class="text-muted">Specializations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section class="services-section py-5" id="services">
+    <div class="container">
+        <h2 class="text-center mb-5">Our Services</h2>
+        <div class="row g-4">
+            @foreach (var service in Model?.Services ?? new List<ServiceDto>())
+            {
+                <div class="col-md-4">
+                    <div class="service-card p-4 text-center h-100 rounded-3 border">
+                        <div class="service-icon mb-3">
+                            <i class="bi @service.IconClass" style="font-size: 3rem; color: #0066cc;"></i>
+                        </div>
+                        <h4>@service.Name</h4>
+                        <p class="text-muted">@service.Description</p>
+                        <small class="text-secondary">@service.DoctorsCount doctors available</small>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Featured Doctors Section -->
+<section class="doctors-section py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Featured Doctors</h2>
+        <div class="row g-4">
+            @foreach (var doctor in Model?.FeaturedDoctors ?? new List<DoctorCardDto>())
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="doctor-card rounded-3 overflow-hidden shadow-sm h-100">
+                        <div class="doctor-header bg-primary text-white p-4 text-center">
+                            <div class="doctor-avatar mb-3">
+                                <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                     style="width: 80px; height: 80px;">
+                                    <span class="text-primary fw-bold fs-3">Dr.@doctor.LastName[0]</span>
+                                </div>
+                            </div>
+                            <h5 class="mb-0">Dr. @doctor.FullName</h5>
+                        </div>
+                        <div class="doctor-body p-4">
+                            <p class="text-muted small mb-2">@doctor.Specialization</p>
+                            <div class="rating mb-3">
+                                <span class="text-warning">
+                                    @for (int i = 0; i < (int)doctor.AverageRating; i++)
+                                    {
+                                        <i class="bi bi-star-fill"></i>
+                                    }
+                                    @for (int i = (int)doctor.AverageRating; i < 5; i++)
+                                    {
+                                        <i class="bi bi-star"></i>
+                                    }
+                                </span>
+                                <span class="text-muted small">(@doctor.AverageRating)</span>
+                            </div>
+                            <p class="fw-bold text-primary mb-3">PKR @doctor.ConsultationFee.ToString("N0")/consultation</p>
+                            <a href="/doctors/@doctor.Id" class="btn btn-outline-primary btn-sm w-100">
+                                View Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="text-center mt-5">
+            <a href="/doctors" class="btn btn-primary btn-lg">View All Doctors</a>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">What Our Patients Say</h2>
+        <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                @if (Model?.Testimonials != null && Model.Testimonials.Any())
+                {
+                    @for (int i = 0; i < Model.Testimonials.Count; i++)
+                    {
+                        var testimonial = Model.Testimonials[i];
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <div class="testimonial-card mx-auto text-center p-5">
+                                <div class="testimonial-rating mb-3">
+                                    @for (int j = 0; j < testimonial.Rating; j++)
+                                    {
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                    }
+                                    @for (int j = testimonial.Rating; j < 5; j++)
+                                    {
+                                        <i class="bi bi-star text-muted"></i>
+                                    }
+                                </div>
+                                <p class="lead mb-4 fst-italic">"@testimonial.Message"</p>
+                                <h5>@testimonial.PatientName</h5>
+                                <p class="text-muted small">
+                                    Visited <strong>Dr. @testimonial.DoctorName</strong><br>
+                                    <small>@testimonial.Specialization</small>
+                                </p>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section class="contact-section py-5 bg-light" id="contact">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h2 class="mb-4">Get In Touch</h2>
+                <p class="text-muted mb-4">
+                    Have any questions or need help scheduling an appointment? We're here to help!
+                </p>
+                <form id="contactForm" asp-controller="Public" asp-action="Contact" method="post">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" name="firstName" placeholder="First Name" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" name="lastName" placeholder="Last Name" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="email" class="form-control" name="email" placeholder="Email Address" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="tel" class="form-control" name="phoneNumber" placeholder="Phone Number">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" name="subject" placeholder="Subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control" name="message" rows="5" placeholder="Your Message" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">Send Message</button>
+                </form>
+            </div>
+            <div class="col-lg-6">
+                <h2 class="mb-4">Contact Information</h2>
+                <div class="contact-info">
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-2">Address</h5>
+                        <p class="text-muted">123 Medical Street, City, State 12345</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-2">Phone</h5>
+                        <p class="text-muted">+1 (555) 123-4567</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-2">Email</h5>
+                        <p class="text-muted">info@medicarehospital.com</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-2">Hours</h5>
+                        <p class="text-muted">
+                            Monday - Friday: 9:00 AM - 5:00 PM<br>
+                            Saturday: 10:00 AM - 2:00 PM<br>
+                            Sunday: Closed
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.getElementById('contactForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch('/public/contact', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    alert('Message sent successfully! We will get back to you soon.');
+                    e.target.reset();
+                } else {
+                    alert('Error sending message. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error sending message. Please try again.');
+            }
+        });
+    </script>
+}
+
+<style>
+    .stat-box {
+        padding: 30px 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-box:hover {
+        transform: translateY(-5px);
+    }
+    
+    .service-card {
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    
+    .service-card:hover {
+        box-shadow: 0 5px 20px rgba(0, 102, 204, 0.2);
+        transform: translateY(-5px);
+    }
+    
+    .doctor-card {
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .doctor-card:hover {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    .testimonial-card {
+        max-width: 600px;
+    }
+</style>

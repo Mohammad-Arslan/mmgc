@@ -17,6 +17,13 @@ public class DoctorSchedule
     [StringLength(20)]
     public string DayOfWeek { get; set; } = string.Empty; // Monday, Tuesday, etc.
 
+    /// <summary>
+    /// Specific date for the schedule (for slot-based scheduling).
+    /// </summary>
+    [Display(Name = "Schedule Date")]
+    [DataType(DataType.Date)]
+    public DateTime ScheduleDate { get; set; } = DateTime.Today;
+
     [Required]
     [Display(Name = "Start Time")]
     [DataType(DataType.Time)]

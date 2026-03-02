@@ -1,0 +1,126 @@
+@model List<MMGC.Shared.DTOs.DoctorDirectoryDto>
+@using MMGC.Shared.DTOs
+@{
+    ViewData["Title"] = "Our Doctors";
+    var specializations = ViewBag.Specializations as List<string> ?? new List<string>();
+    var search = ViewBag.Search as string ?? "";
+    var specialization = ViewBag.Specialization as string ?? "";
+    var sortBy = ViewBag.SortBy as string ?? "name";
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+    var totalCount = ViewBag.TotalCount as int? ?? 0;
+}
+
+<section class="py-5 mt-4">
+    <div class="container">
+        <h1 class="text-center mb-5 animate-fade-in-up">
+            <i class="bi bi-person-badge-fill text-primary me-2"></i>Our Doctors
+        </h1>
+        <p class="text-center text-muted mb-5 animate-fade-in-up animate-delay-1">
+            Find the right specialist for your healthcare needs. Sort by name or filter by specialization.
+        </p>
+
+        <!-- Filters -->
+        <div class="card border-0 shadow-sm rounded-3 mb-5 animate-fade-in-up animate-delay-2">
+            <div class="card-body p-4">
+                <form method="get" asp-action="Doctors" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Search</label>
+                        <input type="text" name="search" class="form-control" placeholder="Doctor name or specialization..." value="@search" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Specialization</label>
+                        <select name="specialization" class="form-select">
+                            <option value="">All Specializations</option>
+                            @foreach (var spec in specializations)
+                            {
+                                <option value="@spec" selected="@(spec == specialization)">@spec</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Sort By</label>
+                        <select name="sortBy" class="form-select">
+                            <option value="name" selected="@(sortBy == "name")">Name (A-Z)</option>
+                            <option value="fee" selected="@(sortBy == "fee")">Consultation Fee</option>
+                            <option value="rating" selected="@(sortBy == "rating")">Rating</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search me-1"></i>Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results count -->
+        <p class="text-muted mb-4">
+            Showing @Model.Count of @totalCount doctors
+        </p>
+
+        <!-- Doctors Grid -->
+        <div class="row g-4">
+            @foreach (var doctor in Model)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="doctor-card card border-0 shadow-sm h-100">
+                        <div class="card-header bg-primary text-white py-4 text-center">
+                            <div class="doctor-avatar mb-2">
+                                <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                    <span class="text-primary fw-bold fs-3">Dr.@doctor.LastName[0]</span>
+                                </div>
+                            </div>
+                            <h5 class="mb-0">Dr. @doctor.FullName</h5>
+                            <p class="mb-0 small opacity-90">@doctor.Specialization</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="rating mb-2">
+                                <span class="text-warning">
+                                    @for (int i = 0; i < (int)doctor.AverageRating; i++) { <i class="bi bi-star-fill"></i> }
+                                    @for (int i = (int)doctor.AverageRating; i < 5; i++) { <i class="bi bi-star"></i> }
+                                </span>
+                                <span class="text-muted small">(@doctor.AverageRating)</span>
+                            </div>
+                            <p class="fw-bold text-primary mb-3">PKR @doctor.ConsultationFee.ToString("N0")/consultation</p>
+                            <a href="/doctors/@doctor.Id" class="btn btn-outline-primary btn-sm w-100">
+                                View Profile & Book
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-search display-4 text-muted"></i>
+                <p class="mt-3 text-muted">No doctors found matching your criteria.</p>
+                <a asp-action="Doctors" class="btn btn-primary">Clear Filters</a>
+            </div>
+        }
+
+        <!-- Pagination -->
+        @if (totalPages > 1)
+        {
+            <nav class="mt-5 d-flex justify-content-center">
+                <ul class="pagination">
+                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="?search=@search&specialization=@specialization&sortBy=@sortBy&page=@(currentPage - 1)">Previous</a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="?search=@search&specialization=@specialization&sortBy=@sortBy&page=@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                        <a class="page-link" href="?search=@search&specialization=@specialization&sortBy=@sortBy&page=@(currentPage + 1)">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</section>

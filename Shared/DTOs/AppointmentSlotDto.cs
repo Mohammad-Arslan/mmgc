@@ -1,3 +1,5 @@
+using MMGC.Shared.Enums;
+
 namespace MMGC.Shared.DTOs;
 
 /// <summary>
@@ -11,14 +13,24 @@ public class AppointmentSlotDto
     public string SlotId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Start time of the appointment slot.
+    /// Schedule ID for the slot.
     /// </summary>
-    public DateTime StartTime { get; set; }
+    public int ScheduleId { get; set; }
 
     /// <summary>
-    /// End time of the appointment slot.
+    /// Date of the appointment slot.
     /// </summary>
-    public DateTime EndTime { get; set; }
+    public DateTime ScheduleDate { get; set; }
+
+    /// <summary>
+    /// Start time of the appointment slot (as TimeSpan).
+    /// </summary>
+    public TimeSpan StartTime { get; set; }
+
+    /// <summary>
+    /// End time of the appointment slot (as TimeSpan).
+    /// </summary>
+    public TimeSpan EndTime { get; set; }
 
     /// <summary>
     /// Indicates whether the slot is available for booking.
@@ -39,4 +51,9 @@ public class AppointmentSlotDto
     /// Doctor's specialization.
     /// </summary>
     public string Specialization { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Slot status: Available (can book), Booked (already taken), Past (time has passed).
+    /// </summary>
+    public SlotStatusEnum SlotStatus { get; set; } = SlotStatusEnum.Available;
 }

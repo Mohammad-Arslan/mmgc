@@ -130,6 +130,12 @@ public class AppointmentsController : Controller
     // GET: Appointments/Create
     public async Task<IActionResult> Create()
     {
+        // Patients should use the self-booking flow (Slots page), not the staff Create form
+        if (User.IsInRole("Patient"))
+        {
+            return Redirect("/Appointments/Slots");
+        }
+
         await PopulateDropDownsAsync();
         var model = new Appointment
         {

@@ -35,6 +35,10 @@ public class Prescription
     [DataType(DataType.DateTime)]
     public DateTime PrescriptionDate { get; set; } = DateTime.Now;
 
+    [Display(Name = "Valid Until")]
+    [DataType(DataType.Date)]
+    public DateTime? ValidUntil { get; set; }
+
     [Display(Name = "Created Date")]
     public DateTime CreatedDate { get; set; } = DateTime.Now;
 

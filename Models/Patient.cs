@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using MMGC.Data;
 
 namespace MMGC.Models;
 
@@ -78,6 +79,13 @@ public class Patient
     [Display(Name = "Allergies")]
     public string? Allergies { get; set; }
 
+    /// <summary>
+    /// Link to AspNetUsers table for authentication.
+    /// </summary>
+    [StringLength(450)]
+    [Display(Name = "User ID")]
+    public string? UserId { get; set; }
+
     [Display(Name = "Created Date")]
     public DateTime CreatedDate { get; set; } = DateTime.Now;
 
@@ -85,9 +93,15 @@ public class Patient
     public DateTime? UpdatedDate { get; set; }
 
     // Navigation properties
+    [ForeignKey(nameof(UserId))]
+    public virtual ApplicationUser? User { get; set; }
+
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
     public virtual ICollection<Procedure> Procedures { get; set; } = new List<Procedure>();
     public virtual ICollection<LabTest> LabTests { get; set; } = new List<LabTest>();
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
+    public virtual ICollection<PatientVital> PatientVitals { get; set; } = new List<PatientVital>();
+    public virtual ICollection<Testimonial> Testimonials { get; set; } = new List<Testimonial>();
+    public virtual ICollection<ProcedureRequest> ProcedureRequests { get; set; } = new List<ProcedureRequest>();
 }

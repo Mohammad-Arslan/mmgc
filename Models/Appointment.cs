@@ -48,47 +48,65 @@ public class Appointment
     [Display(Name = "Status")]
     public string Status { get; set; } = "Scheduled";
 
-    [StringLength(500)]
-    [Display(Name = "Reason")]
-    public string? Reason { get; set; }
-
-    [StringLength(1000)]
-    [Display(Name = "Notes")]
-    public string? Notes { get; set; }
-
+    /// <summary>
+    /// Consultation fee for the appointment (from Doctor).
+    /// </summary>
     [Display(Name = "Consultation Fee")]
     [Column(TypeName = "decimal(18,2)")]
     public decimal ConsultationFee { get; set; }
 
-    [Display(Name = "SMS Sent")]
-    public bool SMSSent { get; set; }
-
-    [Display(Name = "WhatsApp Sent")]
-    public bool WhatsAppSent { get; set; }
-
+    /// <summary>
+    /// Date and time when the appointment was created.
+    /// </summary>
     [Display(Name = "Created Date")]
     public DateTime CreatedDate { get; set; } = DateTime.Now;
 
+    /// <summary>
+    /// Date and time when the appointment was last updated.
+    /// </summary>
     [Display(Name = "Updated Date")]
     public DateTime? UpdatedDate { get; set; }
 
+    /// <summary>
+    /// User ID who created this appointment.
+    /// </summary>
     [StringLength(450)]
     [Display(Name = "Created By")]
     public string? CreatedBy { get; set; }
 
     /// <summary>
-    /// Concurrency token for optimistic locking to prevent race conditions during slot booking.
+    /// SMS confirmation sent flag.
+    /// </summary>
+    [Display(Name = "SMS Sent")]
+    public bool SMSSent { get; set; } = false;
+
+    /// <summary>
+    /// WhatsApp confirmation sent flag.
+    /// </summary>
+    [Display(Name = "WhatsApp Sent")]
+    public bool WhatsAppSent { get; set; } = false;
+
+    /// <summary>
+    /// Concurrency token for preventing double-booking and concurrent modifications.
     /// </summary>
     [Timestamp]
     public byte[]? RowVersion { get; set; }
 
     // Navigation properties
-    [ForeignKey(nameof(PatientId))]
+    [ForeignKey("PatientId")]
     public virtual Patient? Patient { get; set; }
 
-    [ForeignKey(nameof(DoctorId))]
+    [ForeignKey("DoctorId")]
     public virtual Doctor? Doctor { get; set; }
 
-    [ForeignKey(nameof(NurseId))]
+    [ForeignKey("NurseId")]
     public virtual Nurse? Nurse { get; set; }
+
+    [StringLength(1000)]
+    [Display(Name = "Reason")]
+    public string? Reason { get; set; }
+
+    [StringLength(500)]
+    [Display(Name = "Notes")]
+    public string? Notes { get; set; }
 }

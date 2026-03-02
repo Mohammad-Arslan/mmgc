@@ -81,4 +81,10 @@ public class Transaction
 
     [ForeignKey("LabTestId")]
     public virtual LabTest? LabTest { get; set; }
+
+    /// <summary>
+    /// Concurrency token for optimistic concurrency control on financial records.
+    /// </summary>
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 }

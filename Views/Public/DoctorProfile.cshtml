@@ -1,0 +1,102 @@
+@model MMGC.Shared.DTOs.DoctorProfileDto
+@{
+    ViewData["Title"] = $"Dr. {Model?.FullName}";
+}
+
+@if (Model == null)
+{
+    <div class="container py-5">
+        <div class="alert alert-warning">Doctor not found.</div>
+        <a asp-action="Doctors" class="btn btn-primary">Back to Doctors</a>
+    </div>
+}
+else
+{
+    <section class="py-5 mt-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                        <div class="card-body bg-primary text-white text-center py-5">
+                            <div class="mb-3">
+                                <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                                    <span class="text-primary fw-bold display-6">Dr.@Model.LastName[0]</span>
+                                </div>
+                            </div>
+                            <h3 class="mb-1">Dr. @Model.FullName</h3>
+                            <p class="mb-3 opacity-90">@Model.Specialization</p>
+                            <div class="rating mb-3">
+                                @for (int i = 0; i < (int)Model.AverageRating; i++) { <i class="bi bi-star-fill text-warning"></i> }
+                                @for (int i = (int)Model.AverageRating; i < 5; i++) { <i class="bi bi-star text-warning"></i> }
+                                <span class="ms-1">(@Model.AverageRating)</span>
+                            </div>
+                            <p class="h4 mb-0">PKR @Model.ConsultationFee.ToString("N0")</p>
+                            <p class="small opacity-75">per consultation</p>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.ContactNumber))
+                    {
+                        <div class="card border-0 shadow-sm rounded-3 mt-3">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Contact</h6>
+                                <p class="mb-0"><i class="bi bi-telephone me-2"></i>@Model.ContactNumber</p>
+                                @if (!string.IsNullOrEmpty(Model.Email))
+                                {
+                                    <p class="mb-0 mt-1"><i class="bi bi-envelope me-2"></i>@Model.Email</p>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="col-lg-8">
+                    @if (!string.IsNullOrEmpty(Model.Biography))
+                    {
+                        <div class="card border-0 shadow-sm rounded-3 mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">About</h5>
+                                <p class="text-muted">@Model.Biography</p>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">
+                                <i class="bi bi-calendar-check me-2"></i>Available Appointments
+                            </h5>
+                            @if (Model.AvailableSlots != null && Model.AvailableSlots.Any())
+                            {
+                                <div class="row g-3">
+                                    @foreach (var slot in Model.AvailableSlots.Take(12))
+                                    {
+                                        <div class="col-md-4">
+                                            <a href="/Appointments/Slots?DoctorId=@Model.Id&SelectedDate=@slot.ScheduleDate.ToString("yyyy-MM-dd")" 
+                                               class="btn btn-outline-primary w-100 @(slot.IsAvailable ? "" : "disabled")">
+                                                @slot.ScheduleDate.ToString("ddd, MMM d")<br>
+                                                <small>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</small>
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                                @if (Model.AvailableSlots.Count > 12)
+                                {
+                                    <p class="text-muted small mt-3">And @(Model.AvailableSlots.Count - 12) more slots...</p>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted">No available slots in the next 7 days. Please check back later or contact reception.</p>
+                                <a href="/Appointments/Slots?DoctorId=@Model.Id&SelectedDate=@DateTime.Today.ToString("yyyy-MM-dd")" class="btn btn-primary">Book Appointment</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a asp-action="Doctors" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Doctors
+                </a>
+            </div>
+        </div>
+    </section>
+}

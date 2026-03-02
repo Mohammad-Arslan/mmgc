@@ -57,6 +57,46 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
+// Use custom Account/Login instead of Identity UI (/Identity/Account/Login)
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+});
+
+// ===== AUTHORIZATION POLICIES =====
+builder.Services.AddAuthorization(options =>
+{
+    // Patient role policy
+    options.AddPolicy("PatientOnly", policy =>
+        policy.RequireRole("Patient"));
+    
+    // Doctor role policy
+    options.AddPolicy("DoctorOnly", policy =>
+        policy.RequireRole("Doctor"));
+    
+    // Admin role policy
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+    
+    // Medical staff (Doctor, Nurse, etc.)
+    options.AddPolicy("MedicalStaff", policy =>
+        policy.RequireRole("Doctor", "Nurse"));
+    
+    // Clinical staff (Doctor, Nurse, ReceptionStaff)
+    options.AddPolicy("ClinicalStaff", policy =>
+        policy.RequireRole("Doctor", "Nurse", "ReceptionStaff"));
+    
+    // Finance staff
+    options.AddPolicy("FinanceStaff", policy =>
+        policy.RequireRole("AccountsStaff", "Admin"));
+    
+    // Patient or Medical Staff
+    options.AddPolicy("PatientOrMedicalStaff", policy =>
+        policy.RequireRole("Patient", "Doctor", "Nurse"));
+});
+
 // Register Repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
@@ -81,6 +121,12 @@ builder.Services.AddScoped<INotificationProvider, EmailNotificationProvider>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IProcedureWorkflowService, ProcedureWorkflowService>();
 
+// ===== PHASE 3: PUBLIC WEBSITE & DOCUMENT SERVICES =====
+builder.Services.AddScoped<IPdfService, PdfService>();
+builder.Services.AddScoped<IDoctorDirectoryService, DoctorDirectoryService>();
+builder.Services.AddScoped<IPublicWebsiteService, PublicWebsiteService>();
+builder.Services.AddScoped<IDocumentDownloadService, DocumentDownloadService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -100,8 +146,18 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
+    name: "admin-login",
+    pattern: "admin/login",
+    defaults: new { controller = "Account", action = "Login" });
+
+app.MapControllerRoute(
+    name: "home",
+    pattern: "Home",
+    defaults: new { controller = "Home", action = "Index" });
+
+app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Public}/{action=Index}/{id?}");
 
 app.MapRazorPages(); // Required for Identity UI
 
@@ -113,12 +169,8 @@ using (var scope = app.Services.CreateScope())
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         
-        // Ensure database is created and migrations are applied
-        logger.LogInformation("Ensuring database is created...");
-        await context.Database.EnsureCreatedAsync();
-        
-        // Apply pending migrations
-        logger.LogInformation("Applying pending migrations...");
+        // Apply migrations (creates database if not exists; Visual Studio Package Manager: Update-Database)
+        logger.LogInformation("Applying migrations...");
         await context.Database.MigrateAsync();
         
         // Wait a moment for migrations to complete

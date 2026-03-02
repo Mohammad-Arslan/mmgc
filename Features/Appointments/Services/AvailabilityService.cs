@@ -59,8 +59,10 @@ public class AvailabilityService : IAvailabilityService
                     slots.Add(new AppointmentSlotDto
                     {
                         SlotId = $"{doctorId}_{currentTime:yyyyMMddHHmm}",
-                        StartTime = currentTime,
-                        EndTime = slotEnd,
+                        ScheduleId = 0, // Not applicable for generated slots
+                        ScheduleDate = date.Date,
+                        StartTime = currentTime.TimeOfDay,
+                        EndTime = slotEnd.TimeOfDay,
                         IsAvailable = true,
                         DoctorId = doctorId,
                         DoctorName = doctor.FullName,

@@ -30,6 +30,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<AccountsStaff> AccountsStaffs { get; set; }
     public DbSet<NotificationLog> NotificationLogs { get; set; }
     public DbSet<DocumentAuditLog> DocumentAuditLogs { get; set; }
+    public DbSet<Testimonial> Testimonials { get; set; }
+    public DbSet<ContactMessage> ContactMessages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -136,6 +138,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<Patient>()
             .HasIndex(p => p.MRNumber)
             .IsUnique();
+
+        // Link Patient to AspNetUsers - use User navigation to avoid UserId1 shadow property
+        builder.Entity<Patient>()
+            .HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
 
         builder.Entity<Appointment>()
             .HasIndex(a => a.AppointmentDate);

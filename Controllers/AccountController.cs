@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MMGC.Data;
+using MMGC.Models;
+using MMGC.Services;
 
 namespace MMGC.Controllers
 {
@@ -11,15 +13,18 @@ namespace MMGC.Controllers
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IPatientService _patientService;
         private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
+            IPatientService patientService,
             ILogger<AccountController> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
+            _patientService = patientService;
             _logger = logger;
         }
 
@@ -40,6 +45,9 @@ namespace MMGC.Controllers
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
+            // Detect if this is admin/staff login (from /admin/login URL)
+            var isAdminLogin = Request.Path.StartsWithSegments("/admin/login", StringComparison.OrdinalIgnoreCase);
+            ViewData["IsAdminLogin"] = isAdminLogin;
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
@@ -106,15 +114,18 @@ namespace MMGC.Controllers
             {
                 return LocalRedirect(returnUrl);
             }
-            else
-            {
-                return RedirectToAction("Index", "Home");
-            }
+            return RedirectToAction("Index", "Public");
         }
 
         [HttpGet]
         [AllowAnonymous]
         public IActionResult Lockout()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult AccessDenied()
         {
             return View();
         }
@@ -223,6 +234,77 @@ namespace MMGC.Controllers
             return View();
         }
 
+        [HttpGet]
+        [Authorize]
+        public IActionResult Manage()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Register(string? returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
+        {
+            returnUrl ??= Url.Content("~/");
+            if (ModelState.IsValid)
+            {
+                var existingUser = await _userManager.FindByEmailAsync(model.Email);
+                if (existingUser != null)
+                {
+                    ModelState.AddModelError(string.Empty, "An account with this email already exists.");
+                    return View(model);
+                }
+
+                var user = new ApplicationUser
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    EmailConfirmed = false,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName
+                };
+
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
+                {
+                    await _userManager.AddToRoleAsync(user, "Patient");
+
+                    var patient = new Patient
+                    {
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        Email = model.Email,
+                        ContactNumber = model.PhoneNumber,
+                        DateOfBirth = model.DateOfBirth,
+                        Gender = model.Gender,
+                        Address = model.Address,
+                        UserId = user.Id
+                    };
+
+                    await _patientService.CreatePatientAsync(patient);
+                    _logger.LogInformation("Patient registered: {Email}", model.Email);
+
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    return Redirect("/Patient/Dashboard");
+                }
+
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+            return View(model);
+        }
+
         /// <summary>
         /// Redirects user to appropriate dashboard based on their role
         /// </summary>
@@ -261,7 +343,7 @@ namespace MMGC.Controllers
             }
             else if (roles.Contains("Patient"))
             {
-                return RedirectToAction("Index", "Home");
+                return Redirect("/Patient/Dashboard");
             }
 
             // Default fallback
@@ -309,6 +391,54 @@ namespace MMGC.Controllers
 
         [Required]
         public string Code { get; set; } = default!;
+    }
+
+    public class RegisterViewModel
+    {
+        [Required]
+        [StringLength(100)]
+        [Display(Name = "First Name")]
+        public string FirstName { get; set; } = default!;
+
+        [Required]
+        [StringLength(100)]
+        [Display(Name = "Last Name")]
+        public string LastName { get; set; } = default!;
+
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = default!;
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = default!;
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm password")]
+        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = default!;
+
+        [Required]
+        [StringLength(15)]
+        [Display(Name = "Phone Number")]
+        public string PhoneNumber { get; set; } = default!;
+
+        [Required]
+        [DataType(DataType.Date)]
+        [Display(Name = "Date of Birth")]
+        public DateTime DateOfBirth { get; set; }
+
+        [Required]
+        [StringLength(10)]
+        [Display(Name = "Gender")]
+        public string Gender { get; set; } = "Male";
+
+        [StringLength(500)]
+        [Display(Name = "Address")]
+        public string? Address { get; set; }
     }
 }
 
