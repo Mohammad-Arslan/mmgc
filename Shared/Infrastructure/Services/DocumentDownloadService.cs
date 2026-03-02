@@ -67,7 +67,8 @@ public class DocumentDownloadService : IDocumentDownloadService
                     ReferenceNumber = t.ReferenceNumber,
                     Status = t.Status,
                     TransactionDate = t.TransactionDate,
-                    RelatedService = t.Appointment != null ? $"Dr. {t.Appointment.Doctor!.FullName}" : null
+                    RelatedService = t.Appointment != null ? $"Dr. {t.Appointment.Doctor!.FullName}" : null,
+                    InvoicePath = t.InvoicePath
                 })
                 .ToListAsync(cancellationToken);
 
@@ -207,7 +208,8 @@ public class DocumentDownloadService : IDocumentDownloadService
                     ReferenceNumber = t.ReferenceNumber,
                     Status = t.Status,
                     TransactionDate = t.TransactionDate,
-                    RelatedService = t.Appointment != null ? $"Dr. {t.Appointment.Doctor!.FullName}" : null
+                    RelatedService = t.Appointment != null ? $"Dr. {t.Appointment.Doctor!.FullName}" : null,
+                    InvoicePath = t.InvoicePath
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 

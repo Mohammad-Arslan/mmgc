@@ -129,10 +129,15 @@ public class PatientDashboardService : IPatientDashboardService
             dashboard.PendingLabTestsCount = recentLabTests.Count(lt => lt.Status != "Completed");
             dashboard.RecentLabTests = recentLabTests;
 
-            // Get outstanding invoices
-            var outstandingInvoices = await _context.Transactions
+            // Get outstanding invoices (Pending transactions)
+            var outstandingInvoicesQuery = _context.Transactions
                 .AsNoTracking()
-                .Where(t => t.PatientId == patientId && t.Status == "Pending")
+                .Where(t => t.PatientId == patientId && t.Status == "Pending");
+
+            dashboard.OutstandingInvoicesCount = await outstandingInvoicesQuery.CountAsync(cancellationToken);
+            dashboard.OutstandingAmount = await outstandingInvoicesQuery.SumAsync(t => t.Amount, cancellationToken);
+
+            var outstandingInvoices = await outstandingInvoicesQuery
                 .OrderByDescending(t => t.TransactionDate)
                 .Take(5)
                 .Select(t => new DashboardItemDto
@@ -143,14 +148,12 @@ public class PatientDashboardService : IPatientDashboardService
                     Description = $"Amount: {t.Amount:C}",
                     Status = t.Status,
                     Date = t.TransactionDate,
-                    ActionUrl = $"/Reports/Invoice/{t.Id}",
+                    ActionUrl = $"/patient/documents/DownloadInvoice/{t.Id}",
                     RequiresAction = true,
                     IconClass = "bi-receipt"
                 })
                 .ToListAsync(cancellationToken);
 
-            dashboard.OutstandingInvoicesCount = outstandingInvoices.Count;
-            dashboard.OutstandingAmount = outstandingInvoices.Sum(i => decimal.Parse(i.Description.Replace("Amount: ", "").Replace("$", "")));
             dashboard.OutstandingInvoices = outstandingInvoices;
 
             return dashboard;
@@ -291,7 +294,7 @@ public class PatientDashboardService : IPatientDashboardService
                 Description = $"Amount: {t.Amount:C}",
                 Status = t.Status,
                 Date = t.TransactionDate,
-                ActionUrl = $"/Reports/Invoice/{t.Id}",
+                ActionUrl = $"/patient/documents/DownloadInvoice/{t.Id}",
                 RequiresAction = true,
                 IconClass = "bi-receipt"
             })

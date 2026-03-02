@@ -657,6 +657,20 @@ body {
   50% { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2); }
 }
 
+/* Patient Dashboard stat cards - uniform sizes */
+.patient-stat-card {
+  min-height: 140px;
+  border-radius: 12px;
+}
+
+.patient-stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 /* ===========================
    Revenue Chart Styles
    =========================== */

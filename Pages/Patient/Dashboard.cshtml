@@ -70,41 +70,41 @@
             </div>
         </div>
 
-        <!-- Quick Stats -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm bg-light">
-                    <div class="card-body text-center">
-                        <i class="bi bi-calendar-check fs-3 text-primary mb-3"></i>
-                        <h6 class="card-title">Upcoming Appointments</h6>
-                        <h3 class="text-primary">@Model.Dashboard.UpcomingAppointmentsCount</h3>
+        <!-- Quick Stats - uniform card sizes -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm bg-light h-100 patient-stat-card">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                        <i class="bi bi-calendar-check fs-3 text-primary mb-2"></i>
+                        <h6 class="card-title text-muted mb-2">Upcoming Appointments</h6>
+                        <div class="patient-stat-value text-primary">@Model.Dashboard.UpcomingAppointmentsCount</div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm bg-light">
-                    <div class="card-body text-center">
-                        <i class="bi bi-flask fs-3 text-info mb-3"></i>
-                        <h6 class="card-title">Pending Lab Tests</h6>
-                        <h3 class="text-info">@Model.Dashboard.PendingLabTestsCount</h3>
+            <div class="col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm bg-light h-100 patient-stat-card">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                        <i class="bi bi-flask fs-3 text-info mb-2"></i>
+                        <h6 class="card-title text-muted mb-2">Pending Lab Tests</h6>
+                        <div class="patient-stat-value text-info">@Model.Dashboard.PendingLabTestsCount</div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm bg-light">
-                    <div class="card-body text-center">
-                        <i class="bi bi-receipt fs-3 text-warning mb-3"></i>
-                        <h6 class="card-title">Outstanding Invoices</h6>
-                        <h3 class="text-warning">@Model.Dashboard.OutstandingInvoicesCount</h3>
+            <div class="col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm bg-light h-100 patient-stat-card">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                        <i class="bi bi-receipt fs-3 text-warning mb-2"></i>
+                        <h6 class="card-title text-muted mb-2">Outstanding Invoices</h6>
+                        <div class="patient-stat-value text-warning">@Model.Dashboard.OutstandingInvoicesCount</div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm bg-light">
-                    <div class="card-body text-center">
-                        <i class="bi bi-currency-dollar fs-3 text-danger mb-3"></i>
-                        <h6 class="card-title">Outstanding Amount</h6>
-                        <h3 class="text-danger">@Model.Dashboard.OutstandingAmount.ToString("C")</h3>
+            <div class="col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm bg-light h-100 patient-stat-card">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                        <i class="bi bi-currency-rupee fs-3 text-danger mb-2"></i>
+                        <h6 class="card-title text-muted mb-2">Outstanding Amount</h6>
+                        <div class="patient-stat-value text-danger">PKR @Model.Dashboard.OutstandingAmount.ToString("N2")</div>
                     </div>
                 </div>
             </div>

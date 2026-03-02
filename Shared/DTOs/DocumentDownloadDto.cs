@@ -58,6 +58,16 @@ public class InvoiceDto
     public DateTime TransactionDate { get; set; }
     
     public string? RelatedService { get; set; } // Doctor name, Lab test name, Procedure name, etc.
+
+    /// <summary>
+    /// Path to generated invoice file (HTML or PDF) when available.
+    /// </summary>
+    public string? InvoicePath { get; set; }
+
+    /// <summary>
+    /// Whether invoice file exists and can be downloaded.
+    /// </summary>
+    public bool CanDownload => !string.IsNullOrEmpty(InvoicePath);
 }
 
 /// <summary>

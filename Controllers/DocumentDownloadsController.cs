@@ -77,7 +77,7 @@ public class DocumentDownloadsController : Controller
     }
 
     /// <summary>
-    /// Download invoice as PDF.
+    /// Download invoice. Serves the actual generated file (HTML/PDF) when available, same as staff view.
     /// Enforces row-level security - patient can only download their own invoices.
     /// </summary>
     [HttpGet("{invoiceId:int}")]
@@ -94,9 +94,22 @@ public class DocumentDownloadsController : Controller
             if (invoice == null)
                 return NotFound("Invoice not found or access denied");
 
-            // Generate PDF
-            var pdfBytes = await _pdfService.GenerateInvoicePdfAsync(invoiceId, cancellationToken);
+            // Serve the actual generated file (same logic as TransactionsController) when available
+            if (!string.IsNullOrEmpty(invoice.InvoicePath))
+            {
+                var relativePath = invoice.InvoicePath.TrimStart('/');
+                var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath);
 
+                if (System.IO.File.Exists(physicalPath))
+                {
+                    var contentType = GetContentTypeForExtension(Path.GetExtension(physicalPath));
+                    var downloadFileName = Path.GetFileName(physicalPath);
+                    return PhysicalFile(physicalPath, contentType, downloadFileName);
+                }
+            }
+
+            // Fallback: generate PDF from metadata (e.g. if file was deleted)
+            var pdfBytes = await _pdfService.GenerateInvoicePdfAsync(invoiceId, cancellationToken);
             var fileName = $"Invoice-{invoiceId:D6}-{DateTime.Now:yyyy-MM-dd}.pdf";
             return File(pdfBytes, "application/pdf", fileName);
         }
@@ -188,6 +201,7 @@ public class DocumentDownloadsController : Controller
         return extension.ToLowerInvariant() switch
         {
             ".pdf" => "application/pdf",
+            ".html" or ".htm" => "text/html",
             ".jpg" or ".jpeg" => "image/jpeg",
             ".png" => "image/png",
             ".doc" => "application/msword",
