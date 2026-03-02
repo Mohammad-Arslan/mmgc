@@ -143,6 +143,9 @@ public class DoctorDashboardService : IDoctorDashboardService
         var pendingProcedureRequests = await _context.ProcedureRequests
             .CountAsync(pr => pr.DoctorId == doctorId && pr.Status == MMGC.Shared.Enums.ProcedureStatusEnum.Requested);
 
+        var labReportsAwaitingApproval = await _context.LabTests
+            .CountAsync(lt => lt.Status == "Completed" && !string.IsNullOrEmpty(lt.ReportFilePath) && !lt.IsApproved);
+
         return new Dictionary<string, object>
         {
             { "TotalAppointments", totalAppointments },
@@ -151,7 +154,8 @@ public class DoctorDashboardService : IDoctorDashboardService
             { "TotalProcedures", totalProcedures },
             { "TotalPatients", totalPatients },
             { "MonthlyRevenue", monthlyRevenue },
-            { "PendingProcedureRequests", pendingProcedureRequests }
+            { "PendingProcedureRequests", pendingProcedureRequests },
+            { "LabReportsAwaitingApproval", labReportsAwaitingApproval }
         };
     }
 }

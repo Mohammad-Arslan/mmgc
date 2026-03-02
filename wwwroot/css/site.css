@@ -641,6 +641,13 @@ body {
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
 }
 
+.stat-card-purple {
+  border-left-color: #8b5cf6;
+}
+.stat-card-purple .stat-card-icon {
+  background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+}
+
 .stat-card-pulse {
   animation: stat-pulse 2s ease-in-out infinite;
 }

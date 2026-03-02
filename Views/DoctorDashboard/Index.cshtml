@@ -106,6 +106,26 @@
             </div>
         </div>
     </div>
+    <div class="col-xl col-lg-4 col-md-6">
+        <a asp-controller="LabTests" asp-action="Index" class="stat-card-link">
+            <div class="stat-card stat-card-purple @((stats?["LabReportsAwaitingApproval"] as int?) > 0 ? "stat-card-pulse" : "")">
+                <div class="stat-card-content">
+                    <div class="stat-card-icon">
+                        <i class="bi bi-file-earmark-medical"></i>
+                    </div>
+                    <div class="stat-card-body">
+                        <span class="stat-card-label">Lab Reports</span>
+                        <span class="stat-card-value">@(stats?["LabReportsAwaitingApproval"] ?? 0)</span>
+                        <span class="stat-card-meta">Awaiting approval</span>
+                    </div>
+                    @if ((stats?["LabReportsAwaitingApproval"] as int?) > 0)
+                    {
+                        <span class="stat-card-badge">@stats["LabReportsAwaitingApproval"]</span>
+                    }
+                </div>
+            </div>
+        </a>
+    </div>
 </div>
 
 <!-- Quick Actions -->
@@ -136,6 +156,16 @@
                             @if ((stats?["PendingProcedureRequests"] as int?) > 0)
                             {
                                 <span class="badge bg-danger ms-1">@stats["PendingProcedureRequests"]</span>
+                            }
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="LabTests" asp-action="Index" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-file-medical"></i><br>
+                            Lab Reports
+                            @if ((stats?["LabReportsAwaitingApproval"] as int?) > 0)
+                            {
+                                <span class="badge bg-danger ms-1">@stats["LabReportsAwaitingApproval"]</span>
                             }
                         </a>
                     </div>

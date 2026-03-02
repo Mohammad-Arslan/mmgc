@@ -123,6 +123,15 @@
                                             <a href="@item.ReportFilePath" target="_blank" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="View Report">
                                                 <i class="bi bi-file-earmark-text"></i>
                                             </a>
+                                            @if ((User.IsInRole("Doctor") || User.IsInRole("Admin")) && !item.IsApproved)
+                                            {
+                                                <form asp-action="Approve" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Approve Report">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                </form>
+                                            }
                                         }
                                         <button type="button" class="btn btn-sm btn-danger delete-labtest" data-labtest-id="@item.Id" data-test-name="@item.TestName" data-patient-name="@item.Patient?.FullName" data-bs-toggle="tooltip" title="Delete">
                                             <i class="bi bi-trash"></i>

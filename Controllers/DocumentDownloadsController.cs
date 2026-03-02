@@ -137,7 +137,7 @@ public class DocumentDownloadsController : Controller
     }
 
     /// <summary>
-    /// Download lab report as PDF.
+    /// Download lab report. Serves the actual uploaded file (same as doctors see).
     /// Only approved reports can be downloaded.
     /// </summary>
     [HttpGet("{labTestId:int}")]
@@ -157,9 +157,22 @@ public class DocumentDownloadsController : Controller
             if (!report.CanDownload)
                 return BadRequest("Report is not yet approved for download");
 
-            // Generate PDF
-            var pdfBytes = await _pdfService.GenerateLabReportPdfAsync(labTestId, cancellationToken);
+            // Serve the actual uploaded file (same logic as doctors) - not generated PDF
+            if (!string.IsNullOrEmpty(report.ReportFilePath))
+            {
+                var relativePath = report.ReportFilePath.TrimStart('/');
+                var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath);
 
+                if (System.IO.File.Exists(physicalPath))
+                {
+                    var contentType = GetContentTypeForExtension(Path.GetExtension(physicalPath));
+                    var downloadFileName = $"LabReport-{labTestId:D6}-{DateTime.Now:yyyy-MM-dd}{Path.GetExtension(physicalPath)}";
+                    return PhysicalFile(physicalPath, contentType, downloadFileName);
+                }
+            }
+
+            // Fallback: generate PDF from metadata (e.g. if file was deleted)
+            var pdfBytes = await _pdfService.GenerateLabReportPdfAsync(labTestId, cancellationToken);
             var fileName = $"LabReport-{labTestId:D6}-{DateTime.Now:yyyy-MM-dd}.pdf";
             return File(pdfBytes, "application/pdf", fileName);
         }
@@ -168,6 +181,19 @@ public class DocumentDownloadsController : Controller
             _logger.LogError(ex, "Error downloading lab report {LabTestId}", labTestId);
             return StatusCode(500, "Unable to download lab report");
         }
+    }
+
+    private static string GetContentTypeForExtension(string extension)
+    {
+        return extension.ToLowerInvariant() switch
+        {
+            ".pdf" => "application/pdf",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            _ => "application/octet-stream"
+        };
     }
 
     /// <summary>

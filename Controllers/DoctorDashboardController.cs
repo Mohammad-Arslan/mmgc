@@ -65,7 +65,8 @@ public class DoctorDashboardController : Controller
                 { "TotalProcedures", 0 },
                 { "TotalPatients", 0 },
                 { "MonthlyRevenue", 0 },
-                { "PendingProcedureRequests", 0 }
+                { "PendingProcedureRequests", 0 },
+                { "LabReportsAwaitingApproval", 0 }
             };
             ViewBag.RecentAppointments = new List<Appointment>();
             return View(new Doctor { FirstName = "Doctor", LastName = "Profile Not Found" });

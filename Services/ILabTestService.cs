@@ -11,4 +11,5 @@ public interface ILabTestService
     Task UpdateLabTestAsync(LabTest labTest);
     Task DeleteLabTestAsync(int id);
     Task UploadReportAsync(int labTestId, string filePath, string? notes);
+    Task ApproveLabTestAsync(int labTestId, int doctorId);
 }

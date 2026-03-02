@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using MMGC.Models;
-using MMGC.Services;
-using MMGC.Repositories;
 using MMGC.Data;
+using MMGC.Models;
+using MMGC.Repositories;
+using MMGC.Services;
 
 namespace MMGC.Controllers;
 
@@ -15,6 +16,7 @@ public class LabTestsController : Controller
     private readonly ILabTestService _labTestService;
     private readonly IPatientService _patientService;
     private readonly IProcedureService _procedureService;
+    private readonly IDoctorService _doctorService;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<LabTestsController> _logger;
 
@@ -22,14 +24,23 @@ public class LabTestsController : Controller
         ILabTestService labTestService,
         IPatientService patientService,
         IProcedureService procedureService,
+        IDoctorService doctorService,
         ApplicationDbContext context,
         ILogger<LabTestsController> logger)
     {
         _labTestService = labTestService;
         _patientService = patientService;
         _procedureService = procedureService;
+        _doctorService = doctorService;
         _context = context;
         _logger = logger;
+    }
+
+    private async Task<Doctor?> GetCurrentDoctorAsync()
+    {
+        var user = await HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>().GetUserAsync(User);
+        if (user == null) return null;
+        return await _doctorService.GetDoctorByUserIdAsync(user.Id);
     }
 
     // Helper to populate dropdowns
@@ -383,6 +394,51 @@ public class LabTestsController : Controller
             ModelState.AddModelError("", "An error occurred while uploading the report. Please try again.");
             return View(labTest);
         }
+    }
+
+    /// <summary>
+    /// Approve a lab test report so the patient can download it. Doctors only.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Doctor,Admin")]
+    public async Task<IActionResult> Approve(int id)
+    {
+        var doctor = await GetCurrentDoctorAsync();
+        if (doctor == null && !User.IsInRole("Admin"))
+        {
+            TempData["ErrorMessage"] = "Doctor profile not found.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        try
+        {
+            var doctorId = doctor?.Id ?? 0;
+            if (doctorId == 0 && User.IsInRole("Admin"))
+            {
+                var adminDoctor = await _context.Doctors.FirstOrDefaultAsync(d => d.IsActive);
+                doctorId = adminDoctor?.Id ?? 0;
+            }
+            if (doctorId == 0)
+            {
+                TempData["ErrorMessage"] = "No doctor available to record approval.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            await _labTestService.ApproveLabTestAsync(id, doctorId);
+            TempData["SuccessMessage"] = "Lab report approved. Patient can now download it.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error approving lab test {LabTestId}", id);
+            TempData["ErrorMessage"] = "An error occurred while approving the report.";
+        }
+
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     private async Task<bool> LabTestExists(int id)

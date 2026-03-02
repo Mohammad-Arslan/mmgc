@@ -88,4 +88,22 @@ public class LabTestService : ILabTestService
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task ApproveLabTestAsync(int labTestId, int doctorId)
+    {
+        var labTest = await GetLabTestByIdAsync(labTestId);
+        if (labTest == null)
+            throw new InvalidOperationException("Lab test not found");
+        if (labTest.IsApproved)
+            throw new InvalidOperationException("Lab test is already approved");
+        if (string.IsNullOrEmpty(labTest.ReportFilePath))
+            throw new InvalidOperationException("Cannot approve: report not yet uploaded");
+
+        labTest.IsApproved = true;
+        labTest.ApprovedByDoctorId = doctorId;
+        labTest.ApprovedDate = DateTime.UtcNow;
+        labTest.UpdatedDate = DateTime.Now;
+        _context.LabTests.Update(labTest);
+        await _context.SaveChangesAsync();
+    }
 }
