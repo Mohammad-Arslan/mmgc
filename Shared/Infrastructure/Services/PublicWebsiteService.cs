@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MMGC.Data;
 using MMGC.Models;
@@ -223,17 +224,20 @@ public class PublicWebsiteService : IPublicWebsiteService
     private readonly ApplicationDbContext _context;
     private readonly IDoctorDirectoryService _doctorDirectoryService;
     private readonly INotificationService _notificationService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<PublicWebsiteService> _logger;
 
     public PublicWebsiteService(
         ApplicationDbContext context,
         IDoctorDirectoryService doctorDirectoryService,
         INotificationService notificationService,
+        IConfiguration configuration,
         ILogger<PublicWebsiteService> logger)
     {
         _context = context;
         _doctorDirectoryService = doctorDirectoryService;
         _notificationService = notificationService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -324,9 +328,10 @@ public class PublicWebsiteService : IPublicWebsiteService
             _context.ContactMessages.Add(contactMessage);
             await _context.SaveChangesAsync(cancellationToken);
 
-            // Send notification to admin
+            // Send notification to configured contact email (Smtp:FromEmail receives contact form submissions)
+            var contactEmail = _configuration["Smtp:FromEmail"] ?? "admin@medicarehospital.com";
             _ = _notificationService.SendEmailAsync(
-                "admin@medicarehospital.com", // TODO: Get from config
+                contactEmail,
                 $"New Contact Message: {subject}",
                 $"""
                 New contact message from {firstName} {lastName}
@@ -354,8 +359,11 @@ public class PublicWebsiteService : IPublicWebsiteService
         {
             var totalDoctors = await _context.Doctors.CountAsync(d => d.IsActive, cancellationToken);
             var totalPatients = await _context.Patients.CountAsync(cancellationToken);
+            // Count all non-cancelled appointments as "successful" for public stats (Scheduled, Completed, Confirmed, etc.)
             var completedAppointments = await _context.Appointments
-                .CountAsync(a => a.Status == "Completed", cancellationToken);
+                .CountAsync(a =>
+                    a.Status != "Cancelled" && a.StatusEnum != MMGC.Shared.Enums.AppointmentStatusEnum.Cancelled,
+                cancellationToken);
             var specializations = await _context.Doctors
                 .AsNoTracking()
                 .Select(d => d.Specialization)
@@ -385,23 +393,21 @@ public class PublicWebsiteService : IPublicWebsiteService
 
     private async Task<List<ServiceDto>> GetServicesAsync(CancellationToken cancellationToken = default)
     {
-        // TODO: Create Service model and store in database
-        // For now, return hardcoded services based on doctor specializations
-        var specializations = await _context.Doctors
+        var specializationCounts = await _context.Doctors
             .AsNoTracking()
-            .Where(d => d.IsActive)
-            .Select(d => d.Specialization)
-            .Distinct()
+            .Where(d => d.IsActive && !string.IsNullOrEmpty(d.Specialization))
+            .GroupBy(d => d.Specialization!)
+            .Select(g => new { Specialization = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        return specializations
-            .Select((spec, index) => new ServiceDto
+        return specializationCounts
+            .Select((item, index) => new ServiceDto
             {
                 Id = index + 1,
-                Name = spec,
-                Description = $"Professional {spec} services",
+                Name = item.Specialization,
+                Description = $"Professional {item.Specialization} services",
                 IconClass = "bi-hospital",
-                DoctorsCount = 0 // TODO: Calculate actual count per specialization
+                DoctorsCount = item.Count
             })
             .ToList();
     }

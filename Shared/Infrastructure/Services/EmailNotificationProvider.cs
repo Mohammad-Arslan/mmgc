@@ -2,14 +2,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MMGC.Shared.Exceptions;
 using MMGC.Shared.Interfaces;
+using System.Net;
 using System.Net.Mail;
-using System.Text.RegularExpressions;
 
 namespace MMGC.Shared.Infrastructure.Services;
 
 /// <summary>
-/// Email notification provider.
-/// Currently supports SMTP; can be extended to use SendGrid or other providers.
+/// Email notification provider using Gmail SMTP.
 /// </summary>
 public class EmailNotificationProvider : INotificationProvider
 {
@@ -46,21 +45,13 @@ public class EmailNotificationProvider : INotificationProvider
 
             subject ??= "Hospital Management System Notification";
 
-            // For now, log that email would be sent
-            // In production, integrate with SendGrid, SendPulse, or SMTP server
-            var messageId = Guid.NewGuid().ToString();
+            var messageId = await SendEmailViaSmtpAsync(recipientContact, subject, message, cancellationToken);
 
             _logger.LogInformation(
-                "Email prepared for {EmailAddress}, Subject: {Subject}, Message ID: {MessageId}",
+                "Email sent to {EmailAddress}, Subject: {Subject}, Message ID: {MessageId}",
                 MaskEmail(recipientContact),
                 subject,
                 messageId);
-
-            // TODO: Implement actual email sending via SendGrid or SMTP
-            // await SendEmailViaSendGridAsync(recipientContact, subject, message, cancellationToken);
-
-            // Simulate async operation
-            await Task.Delay(100, cancellationToken);
 
             return messageId;
         }
@@ -76,9 +67,10 @@ public class EmailNotificationProvider : INotificationProvider
 
     public bool IsEnabled()
     {
-        // Email is always enabled as fallback
-        // In production, check for SendGrid API key or SMTP configuration
-        return true;
+        var host = _configuration["Smtp:Host"];
+        var fromEmail = _configuration["Smtp:FromEmail"];
+        var password = _configuration["Smtp:Password"];
+        return !string.IsNullOrWhiteSpace(host) && !string.IsNullOrWhiteSpace(fromEmail) && !string.IsNullOrWhiteSpace(password);
     }
 
     public bool ValidateContact(string recipientContact)
@@ -112,19 +104,41 @@ public class EmailNotificationProvider : INotificationProvider
         return $"{localPart}****{domain}";
     }
 
-    // Future: Implement SendGrid integration
-    // private async Task SendEmailViaSendGridAsync(string recipientEmail, string subject, string htmlContent, CancellationToken cancellationToken)
-    // {
-    //     var apiKey = _configuration["SendGrid:ApiKey"];
-    //     var from = _configuration["SendGrid:FromEmail"];
-    //     var client = new SendGridClient(apiKey);
-    //     var msg = new SendGridMessage()
-    //     {
-    //         From = new EmailAddress(from, "MMGC Hospital"),
-    //         Subject = subject,
-    //         HtmlContent = htmlContent,
-    //     };
-    //     msg.AddTo(new EmailAddress(recipientEmail));
-    //     var response = await client.SendEmailAsync(msg, cancellationToken);
-    // }
+    private async Task<string> SendEmailViaSmtpAsync(
+        string recipientEmail,
+        string subject,
+        string body,
+        CancellationToken cancellationToken = default)
+    {
+        var host = _configuration["Smtp:Host"];
+        var port = _configuration.GetValue<int>("Smtp:Port", 587);
+        var enableSsl = _configuration.GetValue<bool>("Smtp:EnableSsl", true);
+        var fromEmail = _configuration["Smtp:FromEmail"];
+        var fromName = _configuration["Smtp:FromName"] ?? "MMGC Hospital";
+        var password = _configuration["Smtp:Password"];
+
+        if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(fromEmail) || string.IsNullOrWhiteSpace(password))
+        {
+            throw new InvalidOperationException("SMTP configuration is incomplete. Check Smtp:Host, Smtp:FromEmail, and Smtp:Password in appsettings.json.");
+        }
+
+        using var client = new SmtpClient(host, port)
+        {
+            EnableSsl = enableSsl,
+            Credentials = new NetworkCredential(fromEmail, password)
+        };
+
+        var mailMessage = new MailMessage
+        {
+            From = new MailAddress(fromEmail, fromName),
+            Subject = subject,
+            Body = body,
+            IsBodyHtml = body.Contains("<html", StringComparison.OrdinalIgnoreCase) || body.Contains("<p>", StringComparison.OrdinalIgnoreCase)
+        };
+        mailMessage.To.Add(recipientEmail);
+
+        await client.SendMailAsync(mailMessage, cancellationToken);
+
+        return Guid.NewGuid().ToString();
+    }
 }
