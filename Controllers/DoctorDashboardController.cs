@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using MMGC.Data;
 using MMGC.Models;
+using MMGC.Repositories;
 using MMGC.Services;
 using MMGC.Shared.Interfaces;
 
@@ -15,6 +18,8 @@ public class DoctorDashboardController : Controller
     private readonly IDoctorService _doctorService;
     private readonly IProcedureWorkflowService _procedureWorkflowService;
     private readonly IImageService _imageService;
+    private readonly IRepository<Nurse> _nurseRepository;
+    private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<DoctorDashboardController> _logger;
 
@@ -23,6 +28,8 @@ public class DoctorDashboardController : Controller
         IDoctorService doctorService,
         IProcedureWorkflowService procedureWorkflowService,
         IImageService imageService,
+        IRepository<Nurse> nurseRepository,
+        ApplicationDbContext context,
         UserManager<ApplicationUser> userManager,
         ILogger<DoctorDashboardController> logger)
     {
@@ -30,6 +37,8 @@ public class DoctorDashboardController : Controller
         _doctorService = doctorService;
         _procedureWorkflowService = procedureWorkflowService;
         _imageService = imageService;
+        _nurseRepository = nurseRepository;
+        _context = context;
         _userManager = userManager;
         _logger = logger;
     }
@@ -210,6 +219,80 @@ public class DoctorDashboardController : Controller
         return View(patient);
     }
 
+    // GET: DoctorDashboard/MyProcedures
+    public async Task<IActionResult> MyProcedures()
+    {
+        var doctor = await GetCurrentDoctorAsync();
+        if (doctor == null) return NotFound();
+
+        var procedures = await _dashboardService.GetProceduresByDoctorAsync(doctor.Id);
+        ViewBag.Doctor = doctor;
+        return View(procedures);
+    }
+
+    // POST: DoctorDashboard/IssuePrescription/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> IssuePrescription(int id)
+    {
+        var doctor = await GetCurrentDoctorAsync();
+        if (doctor == null) return NotFound();
+
+        var procedure = await _context.Procedures
+            .Include(p => p.Patient)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (procedure == null)
+        {
+            TempData["ErrorMessage"] = "Procedure not found.";
+            return RedirectToAction(nameof(MyProcedures));
+        }
+        if (procedure.DoctorId != doctor.Id)
+        {
+            TempData["ErrorMessage"] = "You can only issue prescriptions for your own procedures.";
+            return RedirectToAction(nameof(MyProcedures));
+        }
+        if (procedure.PatientId == null)
+        {
+            TempData["ErrorMessage"] = "Procedure has no patient assigned.";
+            return RedirectToAction("Details", "Procedures", new { id });
+        }
+        var prescriptionText = procedure.Prescription?.Trim();
+        if (string.IsNullOrEmpty(prescriptionText))
+        {
+            TempData["ErrorMessage"] = "Add prescription text in Edit procedure first, then issue for download.";
+            return RedirectToAction("Details", "Procedures", new { id });
+        }
+
+        var existing = await _context.Prescriptions
+            .FirstOrDefaultAsync(p => p.ProcedureId == id);
+        if (existing != null)
+        {
+            existing.PrescriptionDetails = prescriptionText.Length > 2000 ? prescriptionText.Substring(0, 2000) : prescriptionText;
+            existing.PrescriptionDate = DateTime.Now;
+            _context.Prescriptions.Update(existing);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Prescription updated. Patient can download it from their Documents.";
+        }
+        else
+        {
+            var prescription = new Prescription
+            {
+                PatientId = procedure.PatientId.Value,
+                DoctorId = doctor.Id,
+                ProcedureId = id,
+                PrescriptionDetails = prescriptionText.Length > 2000 ? prescriptionText.Substring(0, 2000) : prescriptionText,
+                PrescriptionDate = DateTime.Now,
+                CreatedDate = DateTime.Now,
+                CreatedBy = $"Doctor_{doctor.Id}"
+            };
+            _context.Prescriptions.Add(prescription);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Prescription issued. Patient can download it from their panel (Documents → Prescriptions).";
+        }
+
+        return RedirectToAction("Details", "Procedures", new { id });
+    }
+
     // GET: DoctorDashboard/ProcedureRequests
     public async Task<IActionResult> ProcedureRequests(int page = 1, int pageSize = 10)
     {
@@ -217,11 +300,13 @@ public class DoctorDashboardController : Controller
         if (doctor == null) return NotFound();
 
         var (items, totalCount) = await _procedureWorkflowService.GetPendingRequestsForDoctorAsync(doctor.Id, page, pageSize);
+        var nurses = await _nurseRepository.GetAllAsync();
         ViewBag.Doctor = doctor;
         ViewBag.TotalCount = totalCount;
         ViewBag.Page = page;
         ViewBag.PageSize = pageSize;
         ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        ViewBag.Nurses = new SelectList(nurses.Where(n => n.IsActive), "Id", "FullName");
 
         return View(items);
     }
@@ -229,14 +314,14 @@ public class DoctorDashboardController : Controller
     // POST: DoctorDashboard/ApproveProcedureRequest/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ApproveProcedureRequest(int id, string? approvalComments, DateTime? scheduledDate)
+    public async Task<IActionResult> ApproveProcedureRequest(int id, string? approvalComments, DateTime? scheduledDate, int? nurseId)
     {
         var doctor = await GetCurrentDoctorAsync();
         if (doctor == null) return NotFound();
 
         try
         {
-            await _procedureWorkflowService.ApproveProcedureRequestAsync(id, doctor.Id, approvalComments, scheduledDate);
+            await _procedureWorkflowService.ApproveProcedureRequestAsync(id, doctor.Id, approvalComments, scheduledDate, nurseId);
             TempData["SuccessMessage"] = "Procedure request approved successfully.";
         }
         catch (Exception ex)

@@ -47,13 +47,33 @@
                                 <span>@User.Identity?.Name</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="userDropdown">
-                                @if (User.IsInRole("Patient"))
+                                @if (User.IsInRole("Admin"))
                                 {
-                                    <li><a class="dropdown-item" href="/Patient/Dashboard"><i class="bi bi-speedometer2 me-2"></i>My Portal</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Admin Panel</a></li>
+                                }
+                                else if (User.IsInRole("Doctor"))
+                                {
+                                    <li><a class="dropdown-item" href="/DoctorDashboard"><i class="bi bi-speedometer2 me-2"></i>Doctor Dashboard</a></li>
+                                }
+                                else if (User.IsInRole("Nurse"))
+                                {
+                                    <li><a class="dropdown-item" href="/Nurses/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Nurse Dashboard</a></li>
+                                }
+                                else if (User.IsInRole("ReceptionStaff"))
+                                {
+                                    <li><a class="dropdown-item" href="/Appointments"><i class="bi bi-speedometer2 me-2"></i>Reception Portal</a></li>
+                                }
+                                else if (User.IsInRole("AccountsStaff"))
+                                {
+                                    <li><a class="dropdown-item" href="/Transactions/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Accounts Portal</a></li>
+                                }
+                                else if (User.IsInRole("LabStaff"))
+                                {
+                                    <li><a class="dropdown-item" href="/LabTests/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Lab Portal</a></li>
                                 }
                                 else
                                 {
-                                    <li><a class="dropdown-item" href="/Admin/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Admin Panel</a></li>
+                                    <li><a class="dropdown-item" href="/Patient/Dashboard"><i class="bi bi-speedometer2 me-2"></i>My Portal</a></li>
                                 }
                                 <li><hr class="dropdown-divider"></li>
                                 <li>

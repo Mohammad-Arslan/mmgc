@@ -19,7 +19,14 @@
                     </a>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                        <a href="/Patient/Dashboard" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">
+                        var portalUrl = "/Patient/Dashboard";
+                        if (User.IsInRole("Admin")) { portalUrl = "/Admin/Dashboard"; }
+                        else if (User.IsInRole("Doctor")) { portalUrl = "/DoctorDashboard"; }
+                        else if (User.IsInRole("Nurse")) { portalUrl = "/Nurses/Dashboard"; }
+                        else if (User.IsInRole("ReceptionStaff")) { portalUrl = "/Appointments"; }
+                        else if (User.IsInRole("AccountsStaff")) { portalUrl = "/Transactions/Dashboard"; }
+                        else if (User.IsInRole("LabStaff")) { portalUrl = "/LabTests/Dashboard"; }
+                        <a href="@portalUrl" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">
                             <i class="bi bi-speedometer2 me-2"></i>Go to Portal
                         </a>
                     }

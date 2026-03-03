@@ -9,9 +9,18 @@
             <i class="bi bi-person-circle"></i> @User.Identity?.Name
         </a>
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-            <li><a class="dropdown-item" asp-controller="Account" asp-action="Manage">
-                <i class="bi bi-person"></i> Profile
-            </a></li>
+            @if (User.IsInRole("Patient"))
+            {
+                <li><a class="dropdown-item" href="/Patient/Profile">
+                    <i class="bi bi-person"></i> Profile
+                </a></li>
+            }
+            else
+            {
+                <li><a class="dropdown-item" asp-controller="Account" asp-action="Manage">
+                    <i class="bi bi-person"></i> Profile
+                </a></li>
+            }
             <li><hr class="dropdown-divider"></li>
             <li>
                 <form class="d-inline" asp-controller="Account" asp-action="Logout" method="post">

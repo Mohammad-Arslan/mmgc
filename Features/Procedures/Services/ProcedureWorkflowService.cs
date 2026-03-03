@@ -157,7 +157,7 @@ public class ProcedureWorkflowService : IProcedureWorkflowService
         }
     }
 
-    public async Task<ProcedureRequestDto> ApproveProcedureRequestAsync(int procedureRequestId, int doctorId, string? approvalComments = null, DateTime? scheduledDate = null, CancellationToken cancellationToken = default)
+    public async Task<ProcedureRequestDto> ApproveProcedureRequestAsync(int procedureRequestId, int doctorId, string? approvalComments = null, DateTime? scheduledDate = null, int? nurseId = null, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -176,6 +176,13 @@ public class ProcedureWorkflowService : IProcedureWorkflowService
             if (doctor == null)
                 throw new EntityNotFoundException(nameof(Models.Doctor), doctorId);
 
+            if (nurseId.HasValue)
+            {
+                var nurseExists = await _context.Nurses.AnyAsync(n => n.Id == nurseId.Value && n.IsActive, cancellationToken);
+                if (!nurseExists)
+                    throw new EntityNotFoundException(nameof(Models.Nurse), nurseId.Value);
+            }
+
             request.Status = ProcedureStatusEnum.Approved;
             request.DoctorId = doctorId;
             request.ApprovalComments = approvalComments;
@@ -190,6 +197,7 @@ public class ProcedureWorkflowService : IProcedureWorkflowService
                 {
                     PatientId = request.PatientId,
                     DoctorId = doctorId,
+                    NurseId = nurseId,
                     ProcedureName = request.ProcedureType,
                     ProcedureType = request.ProcedureType,
                     ProcedureDate = scheduledDate.Value,

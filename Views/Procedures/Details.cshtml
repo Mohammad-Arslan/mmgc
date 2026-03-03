@@ -147,6 +147,47 @@
                 </div>
                 <div class="card-body">
                     <p class="mb-0" style="white-space: pre-wrap;">@Model.Prescription</p>
+                    @{
+                        var isProcedureDoctor = ViewBag.IsProcedureDoctor as bool? ?? false;
+                        var issuedPrescriptionId = ViewBag.IssuedPrescriptionId as int?;
+                        var issuedPrescriptionDate = ViewBag.IssuedPrescriptionDate as DateTime?;
+                    }
+                    @if (isProcedureDoctor)
+                    {
+                        <hr class="my-3" />
+                        @if (issuedPrescriptionId.HasValue && issuedPrescriptionDate.HasValue)
+                        {
+                            <p class="text-success small mb-2">
+                                <i class="bi bi-check-circle"></i> Issued for patient download on @issuedPrescriptionDate.Value.ToString("dd MMM yyyy"). Patient can download from <strong>Documents → Prescriptions</strong> in their panel.
+                            </p>
+                            <form method="post" asp-controller="DoctorDashboard" asp-action="IssuePrescription" asp-route-id="@Model.Id" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-arrow-repeat"></i> Update prescription for download
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-2">Make this prescription available for the patient to download from their panel.</p>
+                            <form method="post" asp-controller="DoctorDashboard" asp-action="IssuePrescription" asp-route-id="@Model.Id" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-prescription2"></i> Issue prescription for patient download
+                                </button>
+                            </form>
+                        }
+                    }
+                </div>
+            </div>
+        }
+        @if (ViewBag.IsProcedureDoctor == true && string.IsNullOrEmpty(Model.Prescription))
+        {
+            <div class="card mb-4 border-warning">
+                <div class="card-body">
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-info-circle"></i> No prescription text yet. <a asp-action="Edit" asp-route-id="@Model.Id">Edit this procedure</a> to add prescription details, then you can issue it so the patient can download it from their panel.
+                    </p>
                 </div>
             </div>
         }

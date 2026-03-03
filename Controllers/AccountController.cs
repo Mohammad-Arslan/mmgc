@@ -238,7 +238,52 @@ namespace MMGC.Controllers
         [Authorize]
         public IActionResult Manage()
         {
+            // Keep patients in the patient portal; they use /Patient/Account instead.
+            if (User.IsInRole("Patient"))
+                return RedirectToPage("/Patient/Account");
             return View();
+        }
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult ChangePassword(string? returnUrl = null)
+        {
+            if (User.IsInRole("Patient"))
+                return RedirectToPage("/Patient/Account");
+            ViewData["ReturnUrl"] = returnUrl ?? Url.Content("~/");
+            return View(new ChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model, string? returnUrl = null)
+        {
+            returnUrl ??= Url.Content("~/Patient/Account");
+            ViewData["ReturnUrl"] = returnUrl;
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, "User not found.");
+                return View(model);
+            }
+
+            var changeResult = await _userManager.ChangePasswordAsync(user, model.CurrentPassword!, model.NewPassword!);
+            if (changeResult.Succeeded)
+            {
+                await _signInManager.RefreshSignInAsync(user);
+                _logger.LogInformation("User changed password.");
+                TempData["SuccessMessage"] = "Your password has been changed successfully.";
+                return LocalRedirect(returnUrl);
+            }
+
+            foreach (var error in changeResult.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+            return View(model);
         }
 
         [HttpGet]
@@ -439,6 +484,25 @@ namespace MMGC.Controllers
         [StringLength(500)]
         [Display(Name = "Address")]
         public string? Address { get; set; }
+    }
+
+    public class ChangePasswordViewModel
+    {
+        [Required(ErrorMessage = "Current password is required.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Current password")]
+        public string? CurrentPassword { get; set; }
+
+        [Required(ErrorMessage = "New password is required.")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "New password")]
+        public string? NewPassword { get; set; }
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm new password")]
+        [Compare("NewPassword", ErrorMessage = "The new password and confirmation do not match.")]
+        public string? ConfirmPassword { get; set; }
     }
 }
 

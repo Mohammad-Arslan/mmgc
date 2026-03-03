@@ -286,6 +286,30 @@ public class ProceduresController : Controller
         
         ViewBag.NursingNotes = nursingNotes;
 
+        // For doctors: allow issuing prescription for patient download
+        if (User.IsInRole("Doctor"))
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null)
+            {
+                var currentDoctor = await _doctorService.GetDoctorByUserIdAsync(user.Id)
+                    ?? (await _doctorService.GetAllDoctorsAsync()).FirstOrDefault(d => d.Email?.Equals(user.Email, StringComparison.OrdinalIgnoreCase) == true);
+                ViewBag.IsProcedureDoctor = currentDoctor != null && procedure.DoctorId == currentDoctor.Id;
+            }
+            else
+            {
+                ViewBag.IsProcedureDoctor = false;
+            }
+            var issuedPrescription = await _context.Prescriptions
+                .AsNoTracking()
+                .Where(p => p.ProcedureId == id.Value)
+                .OrderByDescending(p => p.PrescriptionDate)
+                .Select(p => new { p.Id, p.PrescriptionDate })
+                .FirstOrDefaultAsync();
+            ViewBag.IssuedPrescriptionId = issuedPrescription?.Id;
+            ViewBag.IssuedPrescriptionDate = issuedPrescription?.PrescriptionDate;
+        }
+
         return View(procedure);
     }
 

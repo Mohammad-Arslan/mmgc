@@ -240,7 +240,8 @@ public class DocumentDownloadsController : Controller
     }
 
     /// <summary>
-    /// Download prescription as PDF.
+    /// Download prescription document for the authenticated patient.
+    /// Uses the same HTML-based rendering approach as invoices/lab reports (opens in browser).
     /// </summary>
     [HttpGet("{prescriptionId:int}")]
     public async Task<IActionResult> DownloadPrescription(int prescriptionId, CancellationToken cancellationToken = default)
@@ -256,11 +257,11 @@ public class DocumentDownloadsController : Controller
             if (prescription == null)
                 return NotFound("Prescription not found or access denied");
 
-            // Generate PDF
-            var pdfBytes = await _pdfService.GeneratePrescriptionPdfAsync(prescriptionId, cancellationToken);
-
-            var fileName = $"Prescription-{prescriptionId:D6}-{DateTime.Now:yyyy-MM-dd}.pdf";
-            return File(pdfBytes, "application/pdf", fileName);
+            // Generate HTML-based document (PdfService currently returns HTML bytes via placeholder HtmlToPdf).
+            // Serve as text/html so it opens in the browser, similar to how invoice HTML files are handled.
+            var htmlBytes = await _pdfService.GeneratePrescriptionPdfAsync(prescriptionId, cancellationToken);
+            var fileName = $"Prescription-{prescriptionId:D6}-{DateTime.Now:yyyy-MM-dd}.html";
+            return File(htmlBytes, "text/html", fileName);
         }
         catch (Exception ex)
         {

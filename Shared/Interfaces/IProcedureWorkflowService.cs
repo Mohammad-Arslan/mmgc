@@ -62,6 +62,7 @@ public interface IProcedureWorkflowService
     /// <param name="doctorId">The approving doctor's ID (authorization).</param>
     /// <param name="approvalComments">Optional approval comments.</param>
     /// <param name="scheduledDate">Optional date to schedule the procedure immediately.</param>
+    /// <param name="nurseId">Optional nurse to assign to the procedure when scheduling.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Updated procedure request DTO.</returns>
     /// <exception cref="UnauthorizedException">Thrown if doctor is not authorized.</exception>
@@ -71,6 +72,7 @@ public interface IProcedureWorkflowService
         int doctorId,
         string? approvalComments = null,
         DateTime? scheduledDate = null,
+        int? nurseId = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

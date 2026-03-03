@@ -1,0 +1,112 @@
+@model IEnumerable<MMGC.Models.Procedure>
+@{
+    ViewData["Title"] = "My Procedures";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var doctor = ViewBag.Doctor as MMGC.Models.Doctor;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-clipboard-pulse"></i> My Procedures</h2>
+            <p>View and manage procedures assigned to you</p>
+        </div>
+        <div>
+            <a asp-controller="Procedures" asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Procedure
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-circle"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body">
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th><i class="bi bi-person"></i> Patient</th>
+                            <th><i class="bi bi-clipboard-pulse"></i> Procedure</th>
+                            <th><i class="bi bi-tag"></i> Type</th>
+                            <th><i class="bi bi-calendar"></i> Date</th>
+                            <th><i class="bi bi-info-circle"></i> Status</th>
+                            <th><i class="bi bi-gear"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@item.Patient?.FullName</strong>
+                                    @if (item.Patient?.MRNumber != null)
+                                    {
+                                        <br /><small class="text-muted">MR: @item.Patient.MRNumber</small>
+                                    }
+                                </td>
+                                <td><strong>@item.ProcedureName</strong></td>
+                                <td><span class="badge bg-secondary">@item.ProcedureType</span></td>
+                                <td>@item.ProcedureDate.ToString("dd MMM yyyy HH:mm")</td>
+                                <td>
+                                    @{
+                                        var statusClass = item.Status switch
+                                        {
+                                            "Scheduled" => "bg-primary",
+                                            "In Progress" => "bg-warning",
+                                            "Completed" => "bg-success",
+                                            "Cancelled" => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                    }
+                                    <span class="badge @statusClass">@item.Status</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-controller="Procedures" asp-action="Details" asp-route-id="@item.Id" class="btn btn-info" title="View details">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                        <a asp-controller="Procedures" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning" title="Edit procedure and prescription">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-clipboard-pulse" style="font-size: 4rem; color: #e0e0e0;"></i>
+                <p class="text-muted mt-3 mb-0">No procedures assigned to you yet.</p>
+                <p class="text-muted small">Procedures will appear here when you create them or when you approve procedure requests with a schedule date.</p>
+                <a asp-controller="Procedures" asp-action="Create" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Create Procedure
+                </a>
+            </div>
+        }
+    </div>
+</div>

@@ -107,6 +107,13 @@
                                         <input type="datetime-local" name="scheduledDate" id="scheduledDate@(req.Id)" class="form-control" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
                                         <small class="text-muted">Leave empty to approve without scheduling</small>
                                     </div>
+                                    <div class="mb-3">
+                                        <label for="nurseId@(req.Id)" class="form-label">Assign Nurse (optional)</label>
+                                        <select name="nurseId" id="nurseId@(req.Id)" class="form-select" asp-items="ViewBag.Nurses">
+                                            <option value="">-- Select Nurse (Optional) --</option>
+                                        </select>
+                                        <small class="text-muted">Assign a nurse when scheduling; applies to the created procedure</small>
+                                    </div>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

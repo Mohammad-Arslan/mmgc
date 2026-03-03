@@ -118,7 +118,7 @@
                         <h6 class="mb-0">
                             <i class="bi bi-calendar-check"></i> Upcoming Appointments
                         </h6>
-                        <a href="#appointmentHistory" class="btn btn-sm btn-light" data-bs-toggle="modal">View All</a>
+                        <a href="/Patient/Appointments" class="btn btn-sm btn-light">View All</a>
                     </div>
                     <div class="card-body">
                         @if (Model.UpcomingAppointments.Count > 0)
@@ -295,41 +295,3 @@
     }
 </div>
 
-<!-- JavaScript for modal handlers -->
-@section Scripts {
-    <script>
-        // Appointment History Modal
-        document.addEventListener('DOMContentLoaded', function() {
-            const appointmentLink = document.querySelector('a[href="#appointmentHistory"]');
-            if (appointmentLink) {
-                appointmentLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    loadAppointmentHistory(1);
-                });
-            }
-        });
-
-        async function loadAppointmentHistory(pageNumber) {
-            try {
-                const response = await fetch(`?handler=AppointmentHistory&pageNumber=${pageNumber}`, {
-                    method: 'GET',
-                    headers: {
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Appointment history:', data);
-                    // Display in modal or toast
-                    alert('Loaded ' + data.items.length + ' appointments');
-                } else {
-                    alert('Error loading appointment history');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error loading appointment history');
-            }
-        }
-    </script>
-}

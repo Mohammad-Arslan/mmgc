@@ -1,0 +1,80 @@
+@page
+@model MMGC.Pages.Patient.AccountModel
+@{
+    ViewData["Title"] = "Account Settings";
+    Layout = "_PatientLayout";
+}
+
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">
+        <i class="bi bi-gear"></i> Account Settings
+    </h1>
+    <p class="text-muted">Manage your login and password.</p>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle"></i> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-envelope"></i> Login Email</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0"><strong>@(Model.Email ?? "—")</strong></p>
+                    <p class="small text-muted mt-2 mb-0">This is the email you use to sign in. To change it, contact reception or administration.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-key"></i> Change Password</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="ChangePassword" class="needs-validation">
+                <div class="row">
+                    <div class="col-md-8 col-lg-6">
+                        <div class="mb-3">
+                            <label asp-for="ChangePasswordInput.CurrentPassword" class="form-label">Current password</label>
+                            <input asp-for="ChangePasswordInput.CurrentPassword" class="form-control" autocomplete="current-password" />
+                            <span asp-validation-for="ChangePasswordInput.CurrentPassword" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="ChangePasswordInput.NewPassword" class="form-label">New password</label>
+                            <input asp-for="ChangePasswordInput.NewPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="ChangePasswordInput.NewPassword" class="text-danger"></span>
+                            <div class="form-text">At least 6 characters.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="ChangePasswordInput.ConfirmPassword" class="form-label">Confirm new password</label>
+                            <input asp-for="ChangePasswordInput.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="ChangePasswordInput.ConfirmPassword" class="text-danger"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> Change Password
+                        </button>
+                        <a href="/Patient/Profile" class="btn btn-secondary">Back to Profile</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
