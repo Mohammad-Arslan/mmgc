@@ -155,6 +155,12 @@ public class DoctorDirectoryService : IDoctorDirectoryService
             var endDate = DateTime.Today.AddDays(7);
             var allSlots = await _availabilityService.GetSlotsWithStatusInRangeAsync(
                 doctorId, startDate, endDate, cancellationToken);
+            // Order so Available slots appear first, then Booked, then Past (so first 12 on profile are useful)
+            allSlots = allSlots
+                .OrderBy(s => s.SlotStatus) // Available=0, Booked=1, Past=2
+                .ThenBy(s => s.ScheduleDate)
+                .ThenBy(s => s.StartTime)
+                .ToList();
             var availableCount = allSlots.Count(s => s.SlotStatus == Shared.Enums.SlotStatusEnum.Available);
 
             var profile = new DoctorProfileDto
