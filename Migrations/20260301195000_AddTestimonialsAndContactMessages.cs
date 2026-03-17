@@ -82,57 +82,22 @@ namespace MMGC.Migrations
                 table: "ContactMessages",
                 column: "Email");
 
-            // Add other missing columns if they don't exist
-            // These are safe to add with IF NOT EXISTS logic in SQL
-            
-            // Add RowVersion to Transactions if it doesn't exist
-            migrationBuilder.AddColumn<byte[]>(
-                name: "RowVersion",
-                table: "Transactions",
-                type: "rowversion",
-                rowVersion: true,
-                nullable: true);
-
-            // Add Findings to Procedures if it doesn't exist
-            migrationBuilder.AddColumn<string>(
-                name: "Findings",
-                table: "Procedures",
-                type: "nvarchar(max)",
-                maxLength: 5000,
-                nullable: true);
-
-            // Add ValidUntil to Prescriptions if it doesn't exist
-            migrationBuilder.AddColumn<DateTime>(
-                name: "ValidUntil",
-                table: "Prescriptions",
-                type: "datetime2",
-                nullable: true);
-
-            // Add RowVersion to LabTests if it doesn't exist
-            migrationBuilder.AddColumn<byte[]>(
-                name: "RowVersion",
-                table: "LabTests",
-                type: "rowversion",
-                rowVersion: true,
-                nullable: true);
-
-            // Add ScheduleDate to DoctorSchedules if it doesn't exist
-            migrationBuilder.AddColumn<DateTime>(
-                name: "ScheduleDate",
-                table: "DoctorSchedules",
-                type: "datetime2",
-                nullable: false,
-                defaultValue: new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            // Add UserId to Patients if it doesn't exist
-            migrationBuilder.AddColumn<string>(
-                name: "UserId",
-                table: "Patients",
-                type: "nvarchar(450)",
-                maxLength: 450,
-                nullable: true);
-
-            // NOTE: RowVersion on Appointments was already added by Phase2_AddProcedureRequestNotificationAndDocumentModels
+            // Add other columns only if they don't exist (idempotent), so migration never fails
+            // when columns were already added by a previous run or manual script.
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Transactions' AND COLUMN_NAME = 'RowVersion')
+                    ALTER TABLE [Transactions] ADD [RowVersion] rowversion NULL;
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Procedures' AND COLUMN_NAME = 'Findings')
+                    ALTER TABLE [Procedures] ADD [Findings] nvarchar(max) NULL;
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Prescriptions' AND COLUMN_NAME = 'ValidUntil')
+                    ALTER TABLE [Prescriptions] ADD [ValidUntil] datetime2 NULL;
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'LabTests' AND COLUMN_NAME = 'RowVersion')
+                    ALTER TABLE [LabTests] ADD [RowVersion] rowversion NULL;
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'DoctorSchedules' AND COLUMN_NAME = 'ScheduleDate')
+                    ALTER TABLE [DoctorSchedules] ADD [ScheduleDate] datetime2 NOT NULL DEFAULT '2025-01-01';
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Patients' AND COLUMN_NAME = 'UserId')
+                    ALTER TABLE [Patients] ADD [UserId] nvarchar(450) NULL;
+            ");
         }
 
         /// <inheritdoc />
@@ -144,31 +109,21 @@ namespace MMGC.Migrations
             migrationBuilder.DropTable(
                 name: "Testimonials");
 
-            // NOTE: Do not DropColumn RowVersion from Appointments - it belongs to Phase2 migration
-
-            migrationBuilder.DropColumn(
-                name: "UserId",
-                table: "Patients");
-
-            migrationBuilder.DropColumn(
-                name: "ScheduleDate",
-                table: "DoctorSchedules");
-
-            migrationBuilder.DropColumn(
-                name: "RowVersion",
-                table: "LabTests");
-
-            migrationBuilder.DropColumn(
-                name: "ValidUntil",
-                table: "Prescriptions");
-
-            migrationBuilder.DropColumn(
-                name: "Findings",
-                table: "Procedures");
-
-            migrationBuilder.DropColumn(
-                name: "RowVersion",
-                table: "Transactions");
+            // Reverse optional columns (idempotent - only drop if column exists)
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Patients' AND COLUMN_NAME = 'UserId')
+                    ALTER TABLE [Patients] DROP COLUMN [UserId];
+                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'DoctorSchedules' AND COLUMN_NAME = 'ScheduleDate')
+                    ALTER TABLE [DoctorSchedules] DROP COLUMN [ScheduleDate];
+                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'LabTests' AND COLUMN_NAME = 'RowVersion')
+                    ALTER TABLE [LabTests] DROP COLUMN [RowVersion];
+                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Prescriptions' AND COLUMN_NAME = 'ValidUntil')
+                    ALTER TABLE [Prescriptions] DROP COLUMN [ValidUntil];
+                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Procedures' AND COLUMN_NAME = 'Findings')
+                    ALTER TABLE [Procedures] DROP COLUMN [Findings];
+                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Transactions' AND COLUMN_NAME = 'RowVersion')
+                    ALTER TABLE [Transactions] DROP COLUMN [RowVersion];
+            ");
         }
     }
 }

@@ -1,5 +1,10 @@
--- SQL Script to add Testimonials and ContactMessages tables
--- Run this in SQL Server Management Studio
+-- OPTIONAL: Manual script for Testimonials and ContactMessages (and other columns).
+-- You do NOT need to run this when using the project from Visual Studio.
+-- Migrations run automatically on startup (Program.cs calls MigrateAsync()), so
+-- Testimonials and ContactMessages tables are created by migration
+-- 20260301195000_AddTestimonialsAndContactMessages.
+-- Use this script only for one-off fixes or if you cannot run the app (e.g. SSMS only).
+-- Run this in SQL Server Management Studio if needed.
 
 USE db_mmgc;
 
